@@ -60,13 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let clickBuffer = null;
     let exitBuffer = null;
 
-    let clickAudioFallback = null;
-    let exitAudioFallback = null;
+    // Instantiate fallback HTML5 Audio elements immediately for aggressive browser caching
+    const clickAudioFallback = new Audio('assets/music/click.wav');
+    clickAudioFallback.volume = 0.8;
+    clickAudioFallback.preload = 'auto';
+
+    const exitAudioFallback = new Audio('assets/music/exit.wav');
+    exitAudioFallback.volume = 0.8;
+    exitAudioFallback.preload = 'auto';
 
     if (AudioContextClass) {
         audioCtx = new AudioContextClass();
         
-        // Preload and decode sounds immediately on load
+        // Preload and decode Web Audio API buffers immediately in the background
         preloadSound('assets/music/click.wav').then(buffer => { clickBuffer = buffer; });
         preloadSound('assets/music/exit.wav').then(buffer => { exitBuffer = buffer; });
     }
@@ -126,13 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && clickBuffer) {
             playBuffer(clickBuffer, 0.8);
         } else {
-            // HTML5 Fallback
-            if (!clickAudioFallback) {
-                clickAudioFallback = new Audio('assets/music/click.wav');
-                clickAudioFallback.volume = 0.8;
+            // HTML5 Fallback (preloaded and unlocked)
+            if (clickAudioFallback) {
+                clickAudioFallback.currentTime = 0;
+                clickAudioFallback.play().catch(e => console.log('Fallback click play failed:', e));
             }
-            clickAudioFallback.currentTime = 0;
-            clickAudioFallback.play().catch(e => console.log('Fallback click play failed:', e));
         }
     }
 
@@ -140,28 +144,86 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && exitBuffer) {
             playBuffer(exitBuffer, 0.8);
         } else {
-            // HTML5 Fallback
-            if (!exitAudioFallback) {
-                exitAudioFallback = new Audio('assets/music/exit.wav');
-                exitAudioFallback.volume = 0.8;
+            // HTML5 Fallback (preloaded and unlocked)
+            if (exitAudioFallback) {
+                exitAudioFallback.currentTime = 0;
+                exitAudioFallback.play().catch(e => console.log('Fallback exit play failed:', e));
             }
-            exitAudioFallback.currentTime = 0;
-            exitAudioFallback.play().catch(e => console.log('Fallback exit play failed:', e));
         }
     }
 
-    // Earliest user interaction AudioContext unlocking
-    const unlockAudioContext = () => {
+    // Earliest user interaction AudioContext & HTML5 Audio unlocking
+    let audioUnlocked = false;
+    const unlockAudio = () => {
+        if (audioUnlocked) return;
+        
+        // 1. Resume AudioContext if suspended
         if (audioCtx && audioCtx.state === 'suspended') {
             audioCtx.resume().then(() => {
                 console.log('AudioContext successfully unlocked on user interaction.');
             });
         }
-        document.removeEventListener('pointerdown', unlockAudioContext);
-        document.removeEventListener('touchstart', unlockAudioContext);
+        
+        // 2. Play and immediately pause fallbacks to unlock them for future programmatic playback
+        if (clickAudioFallback) {
+            const origVol = clickAudioFallback.volume;
+            clickAudioFallback.volume = 0;
+            clickAudioFallback.play().then(() => {
+                clickAudioFallback.pause();
+                clickAudioFallback.volume = origVol;
+                clickAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock click fallback failed:', e));
+        }
+        
+        if (exitAudioFallback) {
+            const origVol = exitAudioFallback.volume;
+            exitAudioFallback.volume = 0;
+            exitAudioFallback.play().then(() => {
+                exitAudioFallback.pause();
+                exitAudioFallback.volume = origVol;
+                exitAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock exit fallback failed:', e));
+        }
+        
+        audioUnlocked = true;
+        document.removeEventListener('pointerdown', unlockAudio, { capture: true });
+        document.removeEventListener('touchstart', unlockAudio, { capture: true });
+        document.removeEventListener('click', unlockAudio, { capture: true });
     };
-    document.addEventListener('pointerdown', unlockAudioContext);
-    document.addEventListener('touchstart', unlockAudioContext);
+
+    // Use capture phase to ensure this runs BEFORE target click handlers call e.stopPropagation()
+    document.addEventListener('pointerdown', unlockAudio, { capture: true });
+    document.addEventListener('touchstart', unlockAudio, { capture: true });
+    document.addEventListener('click', unlockAudio, { capture: true });
+
+    // Body scroll lock management via MutationObserver
+    function updateBodyScrollLock() {
+        const hasOpenModal = document.querySelectorAll('.modal.open').length > 0;
+        const isCartOpen = document.getElementById('cart-panel') && document.getElementById('cart-panel').classList.contains('open');
+        const isMenuOpen = document.getElementById('nav-menu') && document.getElementById('nav-menu').classList.contains('open');
+        
+        if (hasOpenModal || isCartOpen || isMenuOpen) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    if (window.MutationObserver) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'class') {
+                    updateBodyScrollLock();
+                }
+            });
+        });
+        
+        // Observe all modals, cart panel, and mobile menu for class changes
+        const targets = document.querySelectorAll('.modal, #cart-panel, #nav-menu');
+        targets.forEach(target => {
+            observer.observe(target, { attributes: true, attributeFilter: ['class'] });
+        });
+    }
 
     // Dynamic Copyright Year
     const yearSpan = document.getElementById('current-year');
@@ -404,6 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         oldTimeCurrent.textContent = formatTime(time);
     }
 
+    let oldPlayPromise = null;
     if (oldPlayBtn && oldAudio) {
         oldPlayBtn.addEventListener('click', () => {
             // Stop shop audio if playing
@@ -413,16 +476,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (oldAudio.paused) {
-                oldAudio.play().then(() => {
+                oldPlayPromise = oldAudio.play();
+                if (oldPlayPromise !== undefined) {
+                    oldPlayPromise.then(() => {
+                        setOldPlayState(true);
+                    }).catch(err => {
+                        if (err.name === 'AbortError') {
+                            console.log("Old audio play interrupted by pause.");
+                            return;
+                        }
+                        console.log("Old audio play blocked, simulating:", err);
+                        setOldPlayState(true);
+                        simulateOldProgress();
+                    });
+                } else {
                     setOldPlayState(true);
-                }).catch(err => {
-                    console.log("Old audio play blocked, simulating:", err);
-                    setOldPlayState(true);
-                    simulateOldProgress();
-                });
+                }
             } else {
-                oldAudio.pause();
-                setOldPlayState(false);
+                if (oldPlayPromise !== undefined && oldPlayPromise !== null) {
+                    oldPlayPromise.then(() => {
+                        oldAudio.pause();
+                        setOldPlayState(false);
+                    }).catch(() => {
+                        oldAudio.pause();
+                        setOldPlayState(false);
+                    });
+                } else {
+                    oldAudio.pause();
+                    setOldPlayState(false);
+                }
             }
         });
 
@@ -574,6 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    let shopPlayPromise = null;
     if (shopTrackRows.length > 0 && shopAudio) {
         shopTrackRows.forEach(row => {
             row.addEventListener('click', () => {
@@ -589,17 +672,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isCurrentlyActive) {
                     if (shopAudio.paused) {
-                        shopAudio.play().then(() => {
+                        shopPlayPromise = shopAudio.play();
+                        if (shopPlayPromise !== undefined) {
+                            shopPlayPromise.then(() => {
+                                playIcon.classList.add('hidden');
+                                pauseIcon.classList.remove('hidden');
+                            }).catch(err => {
+                                if (err.name === 'AbortError') {
+                                    console.log("Shop audio play interrupted by pause.");
+                                    return;
+                                }
+                                playIcon.classList.add('hidden');
+                                pauseIcon.classList.remove('hidden');
+                            });
+                        } else {
                             playIcon.classList.add('hidden');
                             pauseIcon.classList.remove('hidden');
-                        }).catch(() => {
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
-                        });
+                        }
                     } else {
-                        shopAudio.pause();
-                        playIcon.classList.remove('hidden');
-                        pauseIcon.classList.add('hidden');
+                        if (shopPlayPromise !== undefined && shopPlayPromise !== null) {
+                            shopPlayPromise.then(() => {
+                                shopAudio.pause();
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            }).catch(() => {
+                                shopAudio.pause();
+                                playIcon.classList.remove('hidden');
+                                pauseIcon.classList.add('hidden');
+                            });
+                        } else {
+                            shopAudio.pause();
+                            playIcon.classList.remove('hidden');
+                            pauseIcon.classList.add('hidden');
+                        }
                     }
                 } else {
                     shopTrackRows.forEach(r => r.classList.remove('active'));
@@ -611,13 +716,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     const src = row.getAttribute('data-preview-src');
                     shopAudio.src = src;
                     
-                    shopAudio.play().then(() => {
+                    shopPlayPromise = shopAudio.play();
+                    if (shopPlayPromise !== undefined) {
+                        shopPlayPromise.then(() => {
+                            playIcon.classList.add('hidden');
+                            pauseIcon.classList.remove('hidden');
+                        }).catch(err => {
+                            if (err.name === 'AbortError') {
+                                console.log("Shop audio play source transition interrupted by pause.");
+                                return;
+                            }
+                            playIcon.classList.add('hidden');
+                            pauseIcon.classList.remove('hidden');
+                        });
+                    } else {
                         playIcon.classList.add('hidden');
                         pauseIcon.classList.remove('hidden');
-                    }).catch(() => {
-                        playIcon.classList.add('hidden');
-                        pauseIcon.classList.remove('hidden');
-                    });
+                    }
                 }
             });
         });
