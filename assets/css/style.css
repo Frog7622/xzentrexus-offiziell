@@ -2964,30 +2964,7 @@ html, body {
     }
 }
 
-/* 15.6. Responsive Portfolio Grid (3 cols desktop, 2 tablet, 1 mobile) */
-.portfolio-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.5rem;
-    max-width: var(--container-max-width);
-    margin: 0 auto;
-}
-
-@media (max-width: 992px) {
-    .portfolio-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.25rem;
-        padding: 0 1.5rem;
-    }
-}
-
-@media (max-width: 576px) {
-    .portfolio-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        padding: 0 1rem;
-    }
-}
+/* 15.6. Responsive Portfolio Grid (Restored to original flex layout for centering single item) */
 
 /* 15.7. Mobile Usability & Spacing Optimizations (max-width: 768px / 480px) */
 @media (max-width: 1024px) {
