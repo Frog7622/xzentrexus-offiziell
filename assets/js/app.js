@@ -322,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            playExitSound(); // Play exit sound when closing mobile menu by clicking outside
         }
     });
 
@@ -1436,11 +1437,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            let closedSomething = false;
+            
             const openModals = document.querySelectorAll('.modal.open');
-            openModals.forEach(modal => modal.classList.remove('open'));
+            if (openModals.length > 0) {
+                openModals.forEach(modal => modal.classList.remove('open'));
+                closedSomething = true;
+            }
             
             if (cartPanel && cartPanel.classList.contains('open')) {
                 toggleCartPanel();
+                closedSomething = true;
+            }
+            
+            if (navMenu && navMenu.classList.contains('open')) {
+                navMenu.classList.remove('open');
+                const currentMenuIcon = document.getElementById('menu-icon');
+                if (currentMenuIcon) {
+                    currentMenuIcon.setAttribute('data-lucide', 'menu');
+                }
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                closedSomething = true;
+            }
+            
+            if (closedSomething) {
+                playExitSound(); // Play exit sound when closing modals, cart or menu via Escape key
             }
         }
     });
@@ -1449,6 +1472,11 @@ document.addEventListener('DOMContentLoaded', () => {
        10. GLOBAL CLICK & EXIT SOUND EFFECTS - EVENT LISTENER
        ========================================================================== */
     document.addEventListener('click', (e) => {
+        // Exclude the entire "Frühere Veröffentlichungen" container/section completely (including any future elements inside it)
+        if (e.target.closest('#music') || e.target.closest('.music-section')) {
+            return;
+        }
+
         // Check if it's an exit/close interaction first
         const isExitElement = e.target.closest('#brand-logo, .modal-close, .close-cart-btn, .modal-overlay, .cart-panel-overlay');
         if (isExitElement) {
@@ -1457,12 +1485,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Otherwise check if it's a standard interactive element
-        const interactive = e.target.closest('a, button, .dot, .lightbox-dot, .cd-mockup, .portfolio-item, .track-item, .play-btn, .timeline-container, .skip-btn');
+        const interactive = e.target.closest('a, button, [role="button"], input, textarea, select, label, .dot, .lightbox-dot, .cd-mockup, .portfolio-item, .track-item, .play-btn, .timeline-container, .skip-btn');
         if (interactive) {
-            // Exclude all controls belonging to the "Alte Releases" player (e.g., play/pause, skip buttons, timeline clicks)
-            if (interactive.closest('.custom-track-player')) {
-                return;
-            }
             playClickSound();
         }
     });

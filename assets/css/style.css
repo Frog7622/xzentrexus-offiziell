@@ -3016,9 +3016,9 @@ html, body {
         width: 24px !important;
     }
     
-    /* Hero Title scale to make it impressive on mobile (Home) */
+    /* Hero Title scale to make it impressive on mobile (Home) without overflow */
     .hero-title {
-        font-size: clamp(1.8rem, 8.5cqw, 6.0rem);
+        font-size: clamp(1.1rem, 7.2cqw, 2.5rem);
     }
     
     /* Mobile Audio controls wrap */
