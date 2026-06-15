@@ -372,37 +372,80 @@ button, input, textarea {
     .main-header.scrolled .header-container {
         display: flex;
         flex-direction: row;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        gap: 0.75rem;
         padding: 0.8rem 1.5rem;
     }
     
     .brand-logo {
         font-size: clamp(1.2rem, 5.5vw, 1.6rem);
         letter-spacing: clamp(0.04em, 1.5vw, 0.08em);
-        text-align: center;
         margin: 0;
     }
     
+    /* Mobil Drawer Navigation */
     .nav-menu {
-        display: none !important;
+        display: block !important;
+        position: fixed;
+        top: 0;
+        right: -320px; /* Slide out of view */
+        width: 300px;
+        max-width: 80%;
+        height: 100vh;
+        background-color: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-left: 1px solid rgba(0, 212, 212, 0.15);
+        padding: 6rem 2rem 2rem;
+        z-index: 999;
+        transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+    }
+    
+    .nav-menu.open {
+        right: 0;
+    }
+    
+    .nav-menu ul {
+        flex-direction: column;
+        gap: 1.8rem;
+        align-items: flex-start;
+    }
+    
+    .nav-link {
+        font-size: 1.15rem;
+        display: block;
+        width: 100%;
+        padding: 0.25rem 0;
     }
     
     .mobile-menu-btn {
-        display: none !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        color: var(--color-text);
+        cursor: pointer;
+        padding: 0.5rem;
+        z-index: 1001;
+        transition: color var(--transition-speed);
+    }
+    
+    .mobile-menu-btn:hover {
+        color: var(--color-teal);
     }
     
     .header-actions {
         position: static;
         transform: none;
-        gap: 0;
+        gap: 0.75rem;
         display: flex;
         align-items: center;
     }
     
     .cart-btn {
-        padding: 0.25rem;
+        padding: 0.5rem;
     }
 }
 
@@ -2665,5 +2708,349 @@ html, body {
 
     .cart-item-name {
         font-size: 0.85rem;
+    }
+}
+
+/* ==========================================================================
+   14. CUSTOM PROMO CODES, SALES COUNTER & SOCIAL WRAPPERS
+   ========================================================================== */
+
+/* Social Media Mobile Hyphen Fix */
+#social-media-title {
+    hyphens: none;
+    -webkit-hyphens: none;
+    -ms-hyphens: none;
+    word-break: keep-all;
+    overflow-wrap: normal;
+}
+
+/* Discount Code Section in Checkout */
+.discount-code-section {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.discount-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-heading);
+}
+
+.discount-input-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.discount-input-group input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 212, 212, 0.15);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.discount-input-group input:focus {
+    border-color: var(--color-teal);
+    box-shadow: 0 0 10px rgba(0, 212, 212, 0.15);
+    outline: none;
+}
+
+.discount-input-group button {
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--color-teal);
+    color: var(--color-teal);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+}
+
+.discount-input-group button:hover {
+    background: var(--color-teal);
+    color: var(--color-bg);
+    box-shadow: var(--shadow-teal);
+}
+
+.discount-feedback {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.discount-feedback.success {
+    color: #00d4d4;
+}
+
+.discount-feedback.error {
+    color: #ff5e5e;
+}
+
+/* Sales Counter Widget */
+.sales-counter-container {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sales-counter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(0, 212, 212, 0.03);
+    border: 1px solid rgba(0, 212, 212, 0.15);
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    animation: salesPulse 3s infinite ease-in-out;
+}
+
+.sales-counter-text strong {
+    color: var(--color-teal);
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(0, 212, 212, 0.3);
+}
+
+@keyframes salesPulse {
+    0%, 100% {
+        transform: scale(1);
+        border-color: rgba(0, 212, 212, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 rgba(0, 212, 212, 0);
+    }
+    50% {
+        transform: scale(1.04);
+        border-color: rgba(0, 212, 212, 0.45);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 212, 212, 0.2);
+        color: #fff;
+    }
+}
+
+/* ==========================================================================
+   15. LAYOUT REORGANIZATION & MULTI-DEVICE OPTIMIZATIONS
+   ========================================================================== */
+
+/* 15.1. Product Slider Arrows Styling */
+.product-slider-wrapper .slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(10, 10, 10, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.product-slider-wrapper .slider-arrow:hover {
+    background: var(--color-teal-dim);
+    border-color: var(--color-teal);
+    color: var(--color-teal);
+    box-shadow: var(--shadow-teal);
+}
+
+.product-slider-wrapper .prev-arrow {
+    left: 1rem;
+}
+
+.product-slider-wrapper .next-arrow {
+    right: 1rem;
+}
+
+/* 15.2. Sales Counter Container */
+.sales-counter-container {
+    margin-top: 1rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* 15.3. Compact Benefits List */
+.product-benefits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.95rem;
+    color: #fff;
+    background: rgba(0, 212, 212, 0.03);
+    border: 1px solid rgba(0, 212, 212, 0.15);
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    width: fit-content;
+}
+
+.benefit-item svg {
+    color: var(--color-teal);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* 15.4. Tighter Product Actions Spacing */
+.product-actions {
+    margin-top: 1rem !important;
+    margin-bottom: 1.5rem;
+}
+
+/* 15.5. Desktop Split About Section (PC layout above 992px) */
+@media (min-width: 993px) {
+    .about-content-wrapper {
+        flex-direction: row;
+        align-items: center;
+        gap: 4rem;
+        max-width: 1100px;
+    }
+    
+    .about-image-centered {
+        flex: 0 0 45%;
+        max-width: 480px;
+    }
+    
+    .about-text-content-centered {
+        flex: 1;
+        text-align: left;
+    }
+    
+    .about-p {
+        text-align: left;
+    }
+    
+    .about-subtitle {
+        text-align: left;
+    }
+    
+    .about-subtitle::after {
+        margin: 0.5rem 0 0 0;
+    }
+}
+
+/* 15.6. Responsive Portfolio Grid (3 cols desktop, 2 tablet, 1 mobile) */
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+}
+
+@media (max-width: 992px) {
+    .portfolio-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+        padding: 0 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+}
+
+/* 15.7. Mobile Usability & Spacing Optimizations (max-width: 768px / 480px) */
+@media (max-width: 1024px) {
+    .sales-counter-container {
+        justify-content: center;
+    }
+    .benefit-item {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Touch target close buttons */
+    .modal-close,
+    .close-cart-btn {
+        padding: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Touch target quantity buttons */
+    .qty-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .qty-val {
+        font-size: 1rem !important;
+        width: 24px !important;
+    }
+    
+    /* Hero Title scale to make it impressive on mobile (Home) */
+    .hero-title {
+        font-size: clamp(1.8rem, 8.5cqw, 6.0rem);
+    }
+    
+    /* Mobile Audio controls wrap */
+    .track-player-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .track-player-details {
+        width: 100%;
+    }
+}
+
+/* 15.8. Landscape viewports optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+    .hero-section {
+        min-height: 140vh;
+        padding: 6rem 0 3rem;
+    }
+    .hero-title {
+        font-size: 3rem;
+    }
+    .hero-subtitle {
+        margin-bottom: 1.5rem;
+    }
+    .scroll-indicator {
+        display: none;
     }
 }

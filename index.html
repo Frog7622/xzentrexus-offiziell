@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Offizielle Website von xzentrexus – Künstler, Musikproduzent & Kreativschaffender. Entdecke neue Beats, elektronische Soundscapes, Merchandise und das Album 'ANFANG'.">
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; connect-src 'self' https://unpkg.com;">
+
+    <meta name="description" content="Offizielle Website von xzentrexus. Musik zwischen Rap, Gesang und Melancholie. Entdecke die CD 'Anfang', aktuelle Veröffentlichungen und offizielle Informationen.">
     <meta name="keywords" content="xzentrexus, Musikproduzent, Beats kaufen, CD Anfang, Künstler Website, Ambient, Cyberpunk, Electronic Music, Portfoliodesign">
     <meta name="author" content="xzentrexus">
     
@@ -28,8 +34,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons (pinned version for security) -->
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -242,6 +248,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Sales Counter -->
+                        <div class="sales-counter-container">
+                            <div class="sales-counter-badge" id="sales-counter-badge">
+                                <span class="sales-counter-text">Verkaufte Einheiten: <strong id="sales-count-val">0</strong> / 30</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Right Column: Product Presentation -->
@@ -362,6 +375,26 @@
                             </div>
                         </div>
                     </div>
+                    <!-- item 2 -->
+                    <div class="portfolio-item" data-scroll-animate="fade-up">
+                        <img src="assets/images/cover_cyberpunk.png" alt="Cyberpunk Concept Art" class="portfolio-img">
+                        <div class="portfolio-overlay">
+                            <div class="portfolio-info">
+                                <span class="portfolio-tag">Cover Art / Graphic Design</span>
+                                <h3 class="portfolio-item-title">Cyberpunk Concept Art</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- item 3 -->
+                    <div class="portfolio-item" data-scroll-animate="fade-up">
+                        <img src="assets/images/merch_hoodie.svg" alt="xzentrexus Hoodie Design" class="portfolio-img">
+                        <div class="portfolio-overlay">
+                            <div class="portfolio-info">
+                                <span class="portfolio-tag">Merchandise / Apparel</span>
+                                <h3 class="portfolio-item-title">xzentrexus Hoodie Design</h3>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -369,7 +402,7 @@
         <!-- 7. Social Media Links Section -->
         <section class="social-section">
             <div class="section-container">
-                <h2 class="section-title text-center" data-scroll-animate="fade-up">Social Media</h2>
+                <h2 class="section-title text-center" data-scroll-animate="fade-up" id="social-media-title">Social Media</h2>
                 <div class="social-links-grid" data-scroll-animate="fade-up">
                     <a href="https://www.instagram.com/xzentrexus/" target="_blank" rel="noopener noreferrer" class="social-card instagram-card" aria-label="Folge auf Instagram">
                         <span>Instagram</span>
@@ -465,7 +498,7 @@
     <!-- Checkout Modal -->
     <div class="modal" id="checkout-modal">
         <div class="modal-overlay"></div>
-        <div class="modal-content">
+        <div class="modal-content modal-scrollable">
             <button class="modal-close" id="close-checkout-modal" aria-label="Modal schließen">
                 <i data-lucide="x"></i>
             </button>
@@ -497,6 +530,16 @@
                     <div class="checkout-summary-total">
                         Total: <span id="checkout-summary-total-val">0.00 €</span>
                     </div>
+                </div>
+                
+                <!-- Promo Code Section -->
+                <div class="discount-code-section">
+                    <label for="checkout-discount-code" class="discount-label">Codes</label>
+                    <div class="discount-input-group">
+                        <input type="text" id="checkout-discount-code" placeholder="Rabattcode...">
+                        <button type="button" id="apply-discount-btn">Anwenden</button>
+                    </div>
+                    <div id="discount-feedback" class="discount-feedback"></div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-full">Kostenpflichtig bestellen</button>
             </form>
@@ -692,6 +735,7 @@
 
     <!-- HTML5 Audio Elements (Hidden) -->
     <audio id="old-releases-audio" src="assets/music/manchmal_kommt_die_wahrheit.wav" preload="auto"></audio>
+    <audio id="shop-preview-audio" preload="none"></audio>
 
     <!-- Custom App JS -->
     <script src="assets/js/app.js"></script>

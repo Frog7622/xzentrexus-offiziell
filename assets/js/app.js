@@ -3,31 +3,151 @@
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Force scroll to top (Hero) on page load – prevents browser scroll restoration
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     // Initialize Lucide Icons
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
-    // Initialize Click and Exit Sounds
-    const clickAudio = new Audio('assets/music/click.wav');
-    clickAudio.volume = 0.8; // Increased volume for clearer feedback
+    // === SECURITY: HTML Escape Helper (XSS Protection) ===
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
 
-    const exitAudio = new Audio('assets/music/exit.wav');
-    exitAudio.volume = 0.8; // Increased volume for clearer feedback
+    // === SECURITY: localStorage Integrity Helper ===
+    const INTEGRITY_SALT = 'xz_2026_cd_anfang';
+    function computeHash(value) {
+        // Simple hash for tamper detection (not cryptographic, but prevents casual manipulation)
+        let hash = 0;
+        const str = INTEGRITY_SALT + ':' + String(value);
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0; // Convert to 32-bit integer
+        }
+        return hash.toString(36);
+    }
+
+    function setSecureStorage(key, value) {
+        localStorage.setItem(key, value);
+        localStorage.setItem(key + '_hash', computeHash(value));
+    }
+
+    function getSecureStorage(key, defaultValue) {
+        const value = localStorage.getItem(key);
+        const storedHash = localStorage.getItem(key + '_hash');
+        if (value === null) return defaultValue;
+        if (storedHash !== computeHash(value)) {
+            // Tampered – reset to default
+            console.warn('localStorage integrity check failed for key:', key);
+            localStorage.removeItem(key);
+            localStorage.removeItem(key + '_hash');
+            return defaultValue;
+        }
+        return parseInt(value, 10);
+    }
+
+    // Initialize Web Audio API and Audio Buffers for Zero-Latency Playback
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let clickBuffer = null;
+    let exitBuffer = null;
+
+    let clickAudioFallback = null;
+    let exitAudioFallback = null;
+
+    if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+        
+        // Preload and decode sounds immediately on load
+        preloadSound('assets/music/click.wav').then(buffer => { clickBuffer = buffer; });
+        preloadSound('assets/music/exit.wav').then(buffer => { exitBuffer = buffer; });
+    }
+
+    async function preloadSound(url) {
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            return new Promise((resolve, reject) => {
+                if (!audioCtx) {
+                    reject(new Error("AudioContext not initialized"));
+                    return;
+                }
+                audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+            });
+        } catch (err) {
+            console.error('Failed to preload and decode sound:', url, err);
+            return null;
+        }
+    }
+
+    function playBuffer(buffer, volume = 0.8) {
+        if (!audioCtx || !buffer) return;
+        
+        // Safety resume for context state (in case it is suspended)
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = volume;
+        
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        source.start(0);
+    }
 
     function playClickSound() {
-        clickAudio.currentTime = 0;
-        clickAudio.play().catch(err => {
-            console.log('Audio playback prevented by autoplay policy:', err);
-        });
+        if (audioCtx && clickBuffer) {
+            playBuffer(clickBuffer, 0.8);
+        } else {
+            // HTML5 Fallback
+            if (!clickAudioFallback) {
+                clickAudioFallback = new Audio('assets/music/click.wav');
+                clickAudioFallback.volume = 0.8;
+            }
+            clickAudioFallback.currentTime = 0;
+            clickAudioFallback.play().catch(e => console.log('Fallback click play failed:', e));
+        }
     }
 
     function playExitSound() {
-        exitAudio.currentTime = 0;
-        exitAudio.play().catch(err => {
-            console.log('Audio playback prevented by autoplay policy:', err);
-        });
+        if (audioCtx && exitBuffer) {
+            playBuffer(exitBuffer, 0.8);
+        } else {
+            // HTML5 Fallback
+            if (!exitAudioFallback) {
+                exitAudioFallback = new Audio('assets/music/exit.wav');
+                exitAudioFallback.volume = 0.8;
+            }
+            exitAudioFallback.currentTime = 0;
+            exitAudioFallback.play().catch(e => console.log('Fallback exit play failed:', e));
+        }
     }
+
+    // Earliest user interaction AudioContext unlocking
+    const unlockAudioContext = () => {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                console.log('AudioContext successfully unlocked on user interaction.');
+            });
+        }
+        document.removeEventListener('pointerdown', unlockAudioContext);
+        document.removeEventListener('touchstart', unlockAudioContext);
+    };
+    document.addEventListener('pointerdown', unlockAudioContext);
+    document.addEventListener('touchstart', unlockAudioContext);
 
     // Dynamic Copyright Year
     const yearSpan = document.getElementById('current-year');
@@ -46,6 +166,66 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    /* ==========================================================================
+       SALES COUNTER – LIMITED EDITION (30 UNITS)
+       ========================================================================== */
+    const SALES_TOTAL_EDITION = 30;
+    const SALES_STORAGE_KEY = 'xzentrexus_sales_count';
+
+    let salesCount = getSecureStorage(SALES_STORAGE_KEY, 0);
+    if (isNaN(salesCount) || salesCount < 0) salesCount = 0;
+    if (salesCount > SALES_TOTAL_EDITION) salesCount = SALES_TOTAL_EDITION;
+
+    const salesCountValEl = document.getElementById('sales-count-val');
+    const salesCounterBadgeEl = document.getElementById('sales-counter-badge');
+
+    function updateSalesCounterUI() {
+        const remaining = Math.max(0, SALES_TOTAL_EDITION - salesCount);
+        const isSoldOut = remaining <= 0;
+
+        if (salesCountValEl) salesCountValEl.textContent = salesCount;
+
+        // Sold out state
+        if (isSoldOut && salesCounterBadgeEl) {
+            salesCounterBadgeEl.innerHTML = '<span class="sales-counter-text" style="color: #ff5e5e; font-weight: 800;">Ausverkauft</span>';
+        }
+
+        // Disable / enable buy button
+        const shopOrderBtn = document.getElementById('shop-order-btn');
+        if (shopOrderBtn) {
+            if (isSoldOut) {
+                shopOrderBtn.disabled = true;
+                shopOrderBtn.style.opacity = '0.4';
+                shopOrderBtn.style.cursor = 'not-allowed';
+                shopOrderBtn.innerHTML = '<i data-lucide="x-circle"></i> Ausverkauft';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            } else {
+                shopOrderBtn.disabled = false;
+                shopOrderBtn.style.opacity = '1';
+                shopOrderBtn.style.cursor = 'pointer';
+            }
+        }
+
+        // Update product status badge
+        const statusBadgeEl = document.getElementById('product-status-badge');
+        if (isSoldOut && statusBadgeEl) {
+            statusBadgeEl.textContent = 'Ausverkauft';
+        }
+    }
+
+    function incrementSalesCount(qty) {
+        salesCount = Math.min(SALES_TOTAL_EDITION, salesCount + qty);
+        setSecureStorage(SALES_STORAGE_KEY, salesCount);
+        updateSalesCounterUI();
+    }
+
+    function getRemainingStock() {
+        return Math.max(0, SALES_TOTAL_EDITION - salesCount);
+    }
+
+    // Initialize sales counter on page load
+    updateSalesCounterUI();
 
     /* ==========================================================================
        1. NAVIGATION & MOBILE MENU
@@ -434,6 +614,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkoutSummaryTotalVal = document.getElementById('checkout-summary-total-val');
     const checkoutForm = document.getElementById('checkout-form');
 
+    // Promo Code elements and state
+    const discountCodeInput = document.getElementById('checkout-discount-code');
+    const applyDiscountBtn = document.getElementById('apply-discount-btn');
+    const discountFeedback = document.getElementById('discount-feedback');
+
+    let appliedDiscountPercent = 0;
+    let appliedDiscountCode = "";
+
+    const validPromoCodes = {
+        'ANFANG': 0.20,      // 20% discount
+        'XZENTREXUS': 0.10,  // 10% discount
+        'PROMO15': 0.15      // 15% discount
+    };
+
+    function updateCheckoutTotal() {
+        if (!checkoutSummaryTotalVal) return;
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const shipping = subtotal > 0 ? 1.99 : 0.00;
+        const discountAmount = subtotal * appliedDiscountPercent;
+        const total = Math.max(0, subtotal - discountAmount) + shipping;
+
+        // Render summary items
+        let summaryHtml = cart.map(item => `
+            <li>
+                <span>${item.qty}x ${escapeHTML(item.name)}</span>
+                <span>${(item.price * item.qty).toFixed(2)} €</span>
+            </li>
+        `).join('');
+
+        if (appliedDiscountPercent > 0) {
+            summaryHtml += `
+                <li class="checkout-discount-summary" style="color: #00d4d4; font-weight: 600;">
+                    <span>Rabatt (${appliedDiscountCode})</span>
+                    <span>-${discountAmount.toFixed(2)} €</span>
+                </li>
+            `;
+        }
+
+        summaryHtml += `
+            <li class="checkout-shipping-summary">
+                <span>Versandkosten (gepolstert)</span>
+                <span>${shipping.toFixed(2)} €</span>
+            </li>
+        `;
+
+        if (checkoutSummaryList) {
+            checkoutSummaryList.innerHTML = summaryHtml;
+        }
+        checkoutSummaryTotalVal.textContent = `${total.toFixed(2)} €`;
+    }
+
     // Cart overlay toggle functions
     function toggleCartPanel() {
         cartPanel.classList.toggle('open');
@@ -462,6 +693,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function addToCart(id, name, price, image) {
+        // Stock validation for CD items
+        if (id.includes('anfang') || id.includes('cd')) {
+            const remaining = getRemainingStock();
+            const currentInCart = cart.filter(item => item.id === id).reduce((sum, item) => sum + item.qty, 0);
+            if (currentInCart + 1 > remaining) {
+                alert(`Es sind nur noch ${remaining} Einheiten verfügbar.`);
+                return;
+            }
+        }
+
         const existingItem = cart.find(item => item.id === id);
         if (existingItem) {
             existingItem.qty += 1;
@@ -479,11 +720,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function changeQuantity(id, amount) {
         const item = cart.find(item => item.id === id);
         if (item) {
-            item.qty += amount;
-            if (item.qty <= 0) {
+            const newQty = item.qty + amount;
+            if (newQty <= 0) {
                 removeFromCart(id);
                 return;
             }
+            // Stock validation for CD items on increment
+            if (amount > 0 && (id.includes('anfang') || id.includes('cd'))) {
+                const remaining = getRemainingStock();
+                if (newQty > remaining) {
+                    alert(`Es sind nur noch ${remaining} Einheiten verfügbar.`);
+                    return;
+                }
+            }
+            item.qty = newQty;
         }
         updateCart();
     }
@@ -499,7 +749,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalWithShipping = itemsSubtotal + shippingCost;
         
         cartTotalValue.textContent = `${totalWithShipping.toFixed(2)} €`;
-        checkoutSummaryTotalVal.textContent = `${totalWithShipping.toFixed(2)} €`;
+        if (checkoutSummaryTotalVal) {
+            updateCheckoutTotal();
+        }
 
         if (cart.length === 0) {
             cartItemsContainer.innerHTML = '<div class="empty-cart-msg">Dein Warenkorb ist leer.</div>';
@@ -515,17 +767,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="cart-items-list">
                     ${cart.map(item => `
                         <div class="cart-item">
-                            <img src="${item.image}" alt="${item.name}" class="cart-item-img">
+                            <img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}" class="cart-item-img">
                             <div class="cart-item-info">
-                                <h4 class="cart-item-name">${item.name}</h4>
+                                <h4 class="cart-item-name">${escapeHTML(item.name)}</h4>
                                 <span class="cart-item-price">${(item.price * item.qty).toFixed(2)} €</span>
                                 <div class="cart-item-qty">
-                                    <button class="qty-btn dec-qty" data-id="${item.id}">-</button>
+                                    <button class="qty-btn dec-qty" data-id="${escapeHTML(item.id)}">-</button>
                                     <span class="qty-val">${item.qty}</span>
-                                    <button class="qty-btn inc-qty" data-id="${item.id}">+</button>
+                                    <button class="qty-btn inc-qty" data-id="${escapeHTML(item.id)}">+</button>
                                 </div>
                             </div>
-                            <button class="remove-item-btn" data-id="${item.id}" aria-label="Artikel entfernen">
+                            <button class="remove-item-btn" data-id="${escapeHTML(item.id)}" aria-label="Artikel entfernen">
                                 <i data-lucide="trash-2"></i>
                             </button>
                         </div>
@@ -561,25 +813,39 @@ document.addEventListener('DOMContentLoaded', () => {
             
             toggleCartPanel();
             
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const shipping = 1.99;
-            const total = subtotal + shipping;
-
-            checkoutSummaryList.innerHTML = `
-                ${cart.map(item => `
-                    <li>
-                        <span>${item.qty}x ${item.name}</span>
-                        <span>${(item.price * item.qty).toFixed(2)} €</span>
-                    </li>
-                `).join('')}
-                <li class="checkout-shipping-summary">
-                    <span>Versandkosten (gepolstert)</span>
-                    <span>${shipping.toFixed(2)} €</span>
-                </li>
-            `;
+            // Reset discount inputs on checkout opening
+            if (discountCodeInput) discountCodeInput.value = '';
+            if (discountFeedback) {
+                discountFeedback.textContent = '';
+                discountFeedback.className = 'discount-feedback';
+            }
+            appliedDiscountPercent = 0;
+            appliedDiscountCode = "";
             
-            checkoutSummaryTotalVal.textContent = `${total.toFixed(2)} €`;
+            updateCheckoutTotal();
             checkoutModal.classList.add('open');
+        });
+    }
+
+    if (applyDiscountBtn && discountCodeInput && discountFeedback) {
+        applyDiscountBtn.addEventListener('click', () => {
+            const enteredCode = discountCodeInput.value.trim().toUpperCase();
+            if (!enteredCode) {
+                discountFeedback.textContent = 'Bitte gib einen Code ein.';
+                discountFeedback.className = 'discount-feedback error';
+                return;
+            }
+
+            if (validPromoCodes.hasOwnProperty(enteredCode)) {
+                appliedDiscountPercent = validPromoCodes[enteredCode];
+                appliedDiscountCode = enteredCode;
+                discountFeedback.textContent = `Rabattcode '${enteredCode}' (${appliedDiscountPercent * 100}%) erfolgreich angewendet!`;
+                discountFeedback.className = 'discount-feedback success';
+                updateCheckoutTotal();
+            } else {
+                discountFeedback.textContent = 'Rabattcode ungültig.';
+                discountFeedback.className = 'discount-feedback error';
+            }
         });
     }
 
@@ -611,6 +877,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         submitBtn.textContent = origText;
                         submitBtn.disabled = false;
                         checkoutForm.reset();
+                        appliedDiscountPercent = 0;
+                        appliedDiscountCode = "";
+                        if (discountCodeInput) discountCodeInput.value = '';
+                        if (discountFeedback) {
+                            discountFeedback.textContent = '';
+                            discountFeedback.className = 'discount-feedback';
+                        }
                         alert('Danke für deine Bestellung! Du erhältst in Kürze eine E-Mail mit Zahlungs- und Download-Details.');
                     }, 1500);
                 }, 1000);
@@ -649,6 +922,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             setTimeout(() => {
                 submitBtn.textContent = 'Bestellung erfolgreich!';
+
+                // Increment sales counter by the actual CD quantity purchased
+                const cdItem = cart.find(item => item.id.includes('anfang') || item.id.includes('cd'));
+                if (cdItem) {
+                    incrementSalesCount(cdItem.qty);
+                }
+
                 cart = [];
                 updateCart();
                 
@@ -657,6 +937,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     submitBtn.textContent = origText;
                     submitBtn.disabled = false;
                     checkoutForm.reset();
+                    appliedDiscountPercent = 0;
+                    appliedDiscountCode = "";
+                    if (discountCodeInput) discountCodeInput.value = '';
+                    if (discountFeedback) {
+                        discountFeedback.textContent = '';
+                        discountFeedback.className = 'discount-feedback';
+                    }
                     
                     alert('Danke für deine Bestellung! Du erhältst in Kürze eine E-Mail mit Zahlungs- und Download-Details.');
                 }, 1500);
@@ -743,6 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         productSlider.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
+            endX = startX; // Reset endX to startX to prevent tap-to-slide calculation bug
         }, { passive: true });
 
         productSlider.addEventListener('touchmove', (e) => {
