@@ -233,7 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const header = document.getElementById('header');
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const navMenu = document.getElementById('nav-menu');
-    const menuIcon = document.getElementById('menu-icon');
 
     // Header scroll background change
     window.addEventListener('scroll', () => {
@@ -250,11 +249,14 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             navMenu.classList.toggle('open');
             
-            // Toggle menu icon
-            if (navMenu.classList.contains('open')) {
-                menuIcon.setAttribute('data-lucide', 'x');
-            } else {
-                menuIcon.setAttribute('data-lucide', 'menu');
+            // Toggle menu icon dynamically to avoid stale Lucide DOM references
+            const currentMenuIcon = document.getElementById('menu-icon');
+            if (currentMenuIcon) {
+                if (navMenu.classList.contains('open')) {
+                    currentMenuIcon.setAttribute('data-lucide', 'x');
+                } else {
+                    currentMenuIcon.setAttribute('data-lucide', 'menu');
+                }
             }
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
@@ -268,7 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', () => {
             if (navMenu && navMenu.classList.contains('open')) {
                 navMenu.classList.remove('open');
-                menuIcon.setAttribute('data-lucide', 'menu');
+                const currentMenuIcon = document.getElementById('menu-icon');
+                if (currentMenuIcon) {
+                    currentMenuIcon.setAttribute('data-lucide', 'menu');
+                }
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 }
@@ -280,7 +285,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         if (navMenu && navMenu.classList.contains('open') && !navMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
             navMenu.classList.remove('open');
-            menuIcon.setAttribute('data-lucide', 'menu');
+            const currentMenuIcon = document.getElementById('menu-icon');
+            if (currentMenuIcon) {
+                currentMenuIcon.setAttribute('data-lucide', 'menu');
+            }
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
