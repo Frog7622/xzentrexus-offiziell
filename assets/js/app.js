@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Use Web Audio API if loaded, fallback to HTML5 fallback otherwise
     function playClickSound() {
         if (audioCtx && clickBuffer) {
             playBuffer(clickBuffer, 0.8);
