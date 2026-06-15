@@ -88,24 +88,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function playBuffer(buffer, volume = 0.8) {
+    function playBuffer(buffer, volume = 0.8, isRetry = false) {
         if (!audioCtx || !buffer) return;
         
         // Safety resume for context state (in case it is suspended)
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+        if (audioCtx.state === 'suspended' && !isRetry) {
+            audioCtx.resume().then(() => {
+                playBuffer(buffer, volume, true);
+            }).catch(err => {
+                console.error('Failed to resume AudioContext:', err);
+                playBufferDirect(buffer, volume);
+            });
+            return;
         }
         
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        
-        const gainNode = audioCtx.createGain();
-        gainNode.gain.value = volume;
-        
-        source.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        source.start(0);
+        playBufferDirect(buffer, volume);
+    }
+
+    function playBufferDirect(buffer, volume) {
+        try {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = volume;
+            
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            source.start(0);
+        } catch (e) {
+            console.error('playBufferDirect failed:', e);
+        }
     }
 
     function playClickSound() {
@@ -245,6 +259,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mobile menu toggle
     if (mobileMenuBtn && navMenu) {
+        // Play haptic sound on pointerdown for instant responsive feedback on mobile/desktop
+        mobileMenuBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); // prevent bubbling to document pointerdown
+            
+            // Safety resume for context state (in case it is suspended)
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            if (navMenu.classList.contains('open')) {
+                playExitSound(); // will close
+            } else {
+                playClickSound(); // will open
+            }
+        });
+
         mobileMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             navMenu.classList.toggle('open');
