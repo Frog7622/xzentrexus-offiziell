@@ -21,6 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
+    // === FORMSPREE CONFIGURATION ===
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mdavbype';
+
+    // === ORDER NUMBER GENERATOR ===
+    function generateOrderNumber() {
+        const now = new Date();
+        const datePart = now.getFullYear().toString() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0');
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // No 0/O/1/I to avoid confusion
+        let randomPart = '';
+        for (let i = 0; i < 5; i++) {
+            randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return `XZ-${datePart}-${randomPart}`;
+    }
+
     // === SECURITY: localStorage Integrity Helper ===
     const INTEGRITY_SALT = 'xz_2026_cd_anfang';
     function computeHash(value) {
@@ -476,35 +493,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 resetShopIcons();
             }
 
-            if (oldAudio.paused) {
+            // Determine action based on UI state (is the play icon currently visible?)
+            const isPlayIconVisible = !oldPlayIcon.classList.contains('hidden');
+
+            if (isPlayIconVisible) {
+                // UI shows Play -> User wants to PLAY
+                setOldPlayState(true);
+                
                 oldPlayPromise = oldAudio.play();
                 if (oldPlayPromise !== undefined) {
                     oldPlayPromise.then(() => {
-                        setOldPlayState(true);
+                        // Successfully playing
                     }).catch(err => {
                         if (err.name === 'AbortError') {
                             console.log("Old audio play interrupted by pause.");
                             return;
                         }
                         console.log("Old audio play blocked, simulating:", err);
-                        setOldPlayState(true);
                         simulateOldProgress();
                     });
-                } else {
-                    setOldPlayState(true);
                 }
             } else {
+                // UI shows Pause -> User wants to PAUSE
+                setOldPlayState(false);
+                
                 if (oldPlayPromise !== undefined && oldPlayPromise !== null) {
                     oldPlayPromise.then(() => {
                         oldAudio.pause();
-                        setOldPlayState(false);
                     }).catch(() => {
                         oldAudio.pause();
-                        setOldPlayState(false);
                     });
                 } else {
                     oldAudio.pause();
-                    setOldPlayState(false);
+                }
+
+                if (oldMockInterval) {
+                    clearInterval(oldMockInterval);
                 }
             }
         });
@@ -622,7 +646,8 @@ document.addEventListener('DOMContentLoaded', () => {
         oldTimeDuration.textContent = formatTime(duration);
         
         oldMockInterval = setInterval(() => {
-            if (oldAudio.paused) {
+            // Clear if UI returns to paused state
+            if (!oldPlayIcon.classList.contains('hidden')) {
                 clearInterval(oldMockInterval);
                 return;
             }
@@ -672,12 +697,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pauseIcon = row.querySelector('.shop-pause-icon');
 
                 if (isCurrentlyActive) {
-                    if (shopAudio.paused) {
+                    const isPlayIconVisible = !playIcon.classList.contains('hidden');
+
+                    if (isPlayIconVisible) {
+                        playIcon.classList.add('hidden');
+                        pauseIcon.classList.remove('hidden');
+                        
                         shopPlayPromise = shopAudio.play();
                         if (shopPlayPromise !== undefined) {
                             shopPlayPromise.then(() => {
-                                playIcon.classList.add('hidden');
-                                pauseIcon.classList.remove('hidden');
+                                // Successfully playing
                             }).catch(err => {
                                 if (err.name === 'AbortError') {
                                     console.log("Shop audio play interrupted by pause.");
@@ -686,25 +715,19 @@ document.addEventListener('DOMContentLoaded', () => {
                                 playIcon.classList.add('hidden');
                                 pauseIcon.classList.remove('hidden');
                             });
-                        } else {
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
                         }
                     } else {
+                        playIcon.classList.remove('hidden');
+                        pauseIcon.classList.add('hidden');
+
                         if (shopPlayPromise !== undefined && shopPlayPromise !== null) {
                             shopPlayPromise.then(() => {
                                 shopAudio.pause();
-                                playIcon.classList.remove('hidden');
-                                pauseIcon.classList.add('hidden');
                             }).catch(() => {
                                 shopAudio.pause();
-                                playIcon.classList.remove('hidden');
-                                pauseIcon.classList.add('hidden');
                             });
                         } else {
                             shopAudio.pause();
-                            playIcon.classList.remove('hidden');
-                            pauseIcon.classList.add('hidden');
                         }
                     }
                 } else {
@@ -1039,7 +1062,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             discountFeedback.textContent = '';
                             discountFeedback.className = 'discount-feedback';
                         }
-                        alert('Danke für deine Bestellung! Du erhältst in Kürze eine E-Mail mit Zahlungs- und Download-Details.');
                     }, 1500);
                 }, 1000);
                 return;
@@ -1074,9 +1096,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const origText = submitBtn.textContent;
             submitBtn.textContent = 'Verarbeite Bestellung...';
             submitBtn.disabled = true;
-            
-            setTimeout(() => {
-                submitBtn.textContent = 'Bestellung erfolgreich!';
+
+            // Generate unique order number and timestamp
+            const orderId = generateOrderNumber();
+            const now = new Date();
+            const timestamp = now.toLocaleDateString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Build order items summary text
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const shipping = subtotal > 0 ? 1.99 : 0.00;
+            const discountAmount = subtotal * appliedDiscountPercent;
+            const total = Math.max(0, subtotal - discountAmount) + shipping;
+
+            const orderItemsText = cart.map(item =>
+                `${item.qty}x ${item.name} — ${(item.price * item.qty).toFixed(2)} €`
+            ).join('\n') +
+                (appliedDiscountPercent > 0 ? `\nRabatt (${appliedDiscountCode}): -${discountAmount.toFixed(2)} €` : '') +
+                `\nVersand: ${shipping.toFixed(2)} €`;
+
+            const totalPrice = `${total.toFixed(2)} €`;
+
+            // Send order via Formspree
+            fetch(FORMSPREE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    _subject: 'Neue Bestellung ' + orderId + ' von ' + nameVal,
+                    Typ: 'Bestellung',
+                    Bestellnummer: orderId,
+                    Name: nameVal,
+                    Email: emailVal,
+                    Lieferadresse: addressVal || 'Keine Adresse angegeben',
+                    Produkte: orderItemsText,
+                    Rabattcode: appliedDiscountCode || 'Keiner',
+                    Gesamtpreis: totalPrice,
+                    Zeitpunkt: timestamp
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Formspree response not ok');
+
+                submitBtn.textContent = 'Weiterleitung zu Stripe...';
 
                 // Increment sales counter by the actual CD quantity purchased
                 const cdItem = cart.find(item => item.id.includes('anfang') || item.id.includes('cd'));
@@ -1100,9 +1163,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         discountFeedback.className = 'discount-feedback';
                     }
                     
-                    alert('Danke für deine Bestellung! Du erhältst in Kürze eine E-Mail mit Zahlungs- und Download-Details.');
-                }, 1500);
-            }, 2000);
+                    // Redirect to Stripe page
+                    window.location.href = "https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00";
+                }, 1000);
+            })
+            .catch((error) => {
+                console.error('Order form send failed:', error);
+                submitBtn.textContent = origText;
+                submitBtn.disabled = false;
+                alert('Bestellung konnte nicht verarbeitet werden. Bitte versuche es erneut oder kontaktiere uns unter info@xzentrexus.com.');
+            });
         });
     }
 
@@ -1469,19 +1539,48 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.disabled = true;
             formStatusMsg.className = 'form-status-msg';
             formStatusMsg.textContent = '';
-            
-            setTimeout(() => {
+
+            // Build Formspree payload
+            const now = new Date();
+            const timestamp = now.toLocaleDateString('de-DE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Send via Formspree
+            fetch(FORMSPREE_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    _subject: 'Neue Kontaktanfrage von ' + nameVal,
+                    Typ: 'Kontaktanfrage',
+                    Name: nameVal,
+                    Email: emailVal,
+                    Nachricht: messageVal,
+                    Zeitpunkt: timestamp
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    submitBtn.textContent = 'Nachricht senden';
+                    submitBtn.disabled = false;
+                    formStatusMsg.classList.add('success');
+                    formStatusMsg.textContent = 'Deine Nachricht wurde erfolgreich gesendet. Ich melde mich in Kürze!';
+                    contactForm.reset();
+                    setTimeout(() => {
+                        formStatusMsg.textContent = '';
+                    }, 5000);
+                } else {
+                    throw new Error('Formspree response not ok');
+                }
+            })
+            .catch((error) => {
+                console.error('Contact form send failed:', error);
                 submitBtn.textContent = 'Nachricht senden';
                 submitBtn.disabled = false;
-                
-                formStatusMsg.classList.add('success');
-                formStatusMsg.textContent = 'Deine Nachricht wurde erfolgreich gesendet. Ich melde mich in Kürze!';
-                contactForm.reset();
-                
-                setTimeout(() => {
-                    formStatusMsg.textContent = '';
-                }, 5000);
-            }, 1500);
+                formStatusMsg.classList.add('error');
+                formStatusMsg.textContent = 'Senden fehlgeschlagen. Bitte versuche es erneut oder schreibe direkt an info@xzentrexus.com.';
+            });
         });
     }
 

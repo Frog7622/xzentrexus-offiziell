@@ -7,7 +7,7 @@
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; connect-src 'self' https://unpkg.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; connect-src 'self' https://unpkg.com https://formspree.io;">
 
     <meta name="description" content="Offizielle Website von xzentrexus. Musik zwischen Rap, Gesang und Melancholie. Entdecke die CD 'Anfang', aktuelle Veröffentlichungen und offizielle Informationen.">
     <meta name="keywords" content="xzentrexus, Musikproduzent, Beats kaufen, CD Anfang, Künstler Website, Ambient, Cyberpunk, Electronic Music, Portfoliodesign">
@@ -36,6 +36,7 @@
     
     <!-- Lucide Icons (pinned version for security) -->
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
@@ -483,7 +484,14 @@
                 <i data-lucide="x"></i>
             </button>
             <h3 class="modal-title">Bestellung abschließen</h3>
-            <p class="modal-desc">Um deine Bestellung abzuschließen, trage bitte deine Daten ein. Du erhältst im Anschluss eine E-Mail mit den Zahlungsdetails (PayPal / Überweisung) und den Download-Links.</p>
+            <div class="modal-desc">
+                <p class="modal-desc-highlight">Fast geschafft.</p>
+                <p>Fülle die folgenden Felder aus, um deine Vorbestellung abzuschließen.</p>
+                <p>Nach deiner Bestellung erhältst du sofort eine Bestätigungs-E-Mail mit allen Informationen zu Zahlung, Versand und deiner Bestellung.</p>
+                <p>Sobald die Zahlung erfolgreich eingegangen ist, wird deine CD für dich reserviert. Nach Veröffentlichung wird sie an die angegebene Lieferadresse versendet.</p>
+                <p>Digitale Inhalte und Updates erhältst du automatisch per E-Mail.</p>
+                <p class="modal-desc-muted">Deine Daten werden ausschließlich zur Bearbeitung deiner Bestellung verwendet.</p>
+            </div>
             <form id="checkout-form">
                 <!-- Honeypot Field for Spam Protection -->
                 <div class="form-group-hp" style="display:none !important; position:absolute; left:-9999px;">
@@ -503,10 +511,11 @@
                     <label for="checkout-address">Lieferadresse (Nur bei physischen CDs)</label>
                 </div>
                 <div class="modal-order-summary">
-                    <h4>Bestellübersicht:</h4>
+                    <h4>Bestellübersicht</h4>
                     <ul id="checkout-summary-list">
                         <!-- Filled dynamically -->
                     </ul>
+                    <div class="checkout-vat-note">Alle Preise inklusive gesetzlicher Mehrwertsteuer.</div>
                     <div class="checkout-summary-total">
                         Total: <span id="checkout-summary-total-val">0.00 €</span>
                     </div>
@@ -521,7 +530,34 @@
                     </div>
                     <div id="discount-feedback" class="discount-feedback"></div>
                 </div>
+
+                <!-- Trust Badges -->
+                <div class="checkout-trust-badges">
+                    <div class="trust-badge">
+                        <i data-lucide="check"></i>
+                        <span>Sichere Bestellung</span>
+                    </div>
+                    <div class="trust-badge">
+                        <i data-lucide="check"></i>
+                        <span>SSL-verschlüsselte Datenübertragung</span>
+                    </div>
+                    <div class="trust-badge">
+                        <i data-lucide="check"></i>
+                        <span>Versand nach Veröffentlichung</span>
+                    </div>
+                </div>
+
+                <!-- Legal disclaimer -->
+                <p class="checkout-disclaimer">
+                    Mit Klick auf „Kostenpflichtig bestellen“ gibst du eine verbindliche Bestellung ab.
+                </p>
+
                 <button type="submit" class="btn btn-primary btn-full">Kostenpflichtig bestellen</button>
+                <div class="stripe-link-wrapper">
+                    <a href="https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00" target="_blank" rel="noopener noreferrer" class="stripe-fallback-link">
+                        Alternativ: Direkt über Stripe bezahlen
+                    </a>
+                </div>
             </form>
         </div>
     </div>

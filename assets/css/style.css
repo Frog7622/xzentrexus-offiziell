@@ -2278,18 +2278,46 @@ button, input, textarea {
 }
 
 /* Order Summary in Checkout Modal */
+.modal-desc p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.modal-desc p.modal-desc-highlight {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+    font-family: var(--font-heading);
+    letter-spacing: 0.01em;
+}
+
+.modal-desc p.modal-desc-muted {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    border-left: 2px solid var(--color-teal);
+    padding-left: 8px;
+    margin-top: 1rem;
+    color: var(--color-text-muted);
+}
+
 .modal-order-summary {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 6px;
-    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 212, 212, 0.04) 0%, rgba(0, 0, 0, 0.4) 100%);
+    border: 1px solid rgba(0, 212, 212, 0.2);
+    border-radius: 8px;
+    padding: 1.25rem;
     margin: 1.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 212, 212, 0.02);
 }
 
 .modal-order-summary h4 {
-    font-size: 1rem;
+    font-size: 1.05rem;
     color: #fff;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--font-heading);
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.5rem;
 }
 
 .modal-order-summary ul {
@@ -2300,16 +2328,95 @@ button, input, textarea {
 .modal-order-summary li {
     display: flex;
     justify-content: space-between;
-    padding: 0.25rem 0;
+    padding: 0.35rem 0;
+}
+
+.checkout-vat-note {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    opacity: 0.8;
+    margin-top: 0.5rem;
+    text-align: left;
 }
 
 .checkout-summary-total {
-    border-top: 1px solid rgba(255,255,255,0.1);
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 212, 212, 0.25);
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
     text-align: right;
     font-weight: 700;
+    color: #ffffff;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.checkout-summary-total span {
     color: var(--color-teal);
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    text-shadow: var(--shadow-teal);
+}
+
+/* Trust Badges */
+.checkout-trust-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin: 1.25rem 0 0.85rem 0;
+}
+
+.trust-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.trust-badge i {
+    width: 14px;
+    height: 14px;
+    color: var(--color-teal);
+    stroke-width: 2.5;
+}
+
+/* Legal Disclaimer */
+.checkout-disclaimer {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    opacity: 0.8;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 0.75rem;
+}
+
+/* Stripe Fallback Link */
+.stripe-link-wrapper {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.stripe-fallback-link {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color var(--transition-speed);
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+    padding-bottom: 2px;
+}
+
+.stripe-fallback-link:hover {
+    color: var(--color-teal);
+    border-bottom-color: var(--color-teal);
 }
 
 @media (max-width: 480px) {
