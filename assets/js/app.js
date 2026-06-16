@@ -38,38 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `XZ-${datePart}-${randomPart}`;
     }
 
-    // === SECURITY: localStorage Integrity Helper ===
-    const INTEGRITY_SALT = 'xz_2026_cd_anfang';
-    function computeHash(value) {
-        // Simple hash for tamper detection (not cryptographic, but prevents casual manipulation)
-        let hash = 0;
-        const str = INTEGRITY_SALT + ':' + String(value);
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0; // Convert to 32-bit integer
-        }
-        return hash.toString(36);
-    }
-
-    function setSecureStorage(key, value) {
-        localStorage.setItem(key, value);
-        localStorage.setItem(key + '_hash', computeHash(value));
-    }
-
-    function getSecureStorage(key, defaultValue) {
-        const value = localStorage.getItem(key);
-        const storedHash = localStorage.getItem(key + '_hash');
-        if (value === null) return defaultValue;
-        if (storedHash !== computeHash(value)) {
-            // Tampered – reset to default
-            console.warn('localStorage integrity check failed for key:', key);
-            localStorage.removeItem(key);
-            localStorage.removeItem(key + '_hash');
-            return defaultValue;
-        }
-        return parseInt(value, 10);
-    }
 
     // Initialize Web Audio API and Audio Buffers for Zero-Latency Playback
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -261,65 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /* ==========================================================================
-       SALES COUNTER – LIMITED EDITION (30 UNITS)
-       ========================================================================== */
-    const SALES_TOTAL_EDITION = 30;
-    const SALES_STORAGE_KEY = 'xzentrexus_sales_count';
-
-    let salesCount = getSecureStorage(SALES_STORAGE_KEY, 0);
-    if (isNaN(salesCount) || salesCount < 0) salesCount = 0;
-    if (salesCount > SALES_TOTAL_EDITION) salesCount = SALES_TOTAL_EDITION;
-
-    const salesCountValEl = document.getElementById('sales-count-val');
-    const salesCounterBadgeEl = document.getElementById('sales-counter-badge');
-
-    function updateSalesCounterUI() {
-        const remaining = Math.max(0, SALES_TOTAL_EDITION - salesCount);
-        const isSoldOut = remaining <= 0;
-
-        if (salesCountValEl) salesCountValEl.textContent = salesCount;
-
-        // Sold out state
-        if (isSoldOut && salesCounterBadgeEl) {
-            salesCounterBadgeEl.innerHTML = '<span class="sales-counter-text" style="color: #ff5e5e; font-weight: 800;">Ausverkauft</span>';
-        }
-
-        // Disable / enable buy button
-        const shopOrderBtn = document.getElementById('shop-order-btn');
-        if (shopOrderBtn) {
-            if (isSoldOut) {
-                shopOrderBtn.disabled = true;
-                shopOrderBtn.style.opacity = '0.4';
-                shopOrderBtn.style.cursor = 'not-allowed';
-                shopOrderBtn.innerHTML = '<i data-lucide="x-circle"></i> Ausverkauft';
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            } else {
-                shopOrderBtn.disabled = false;
-                shopOrderBtn.style.opacity = '1';
-                shopOrderBtn.style.cursor = 'pointer';
-            }
-        }
-
-        // Update product status badge
-        const statusBadgeEl = document.getElementById('product-status-badge');
-        if (isSoldOut && statusBadgeEl) {
-            statusBadgeEl.textContent = 'Ausverkauft';
-        }
-    }
-
-    function incrementSalesCount(qty) {
-        salesCount = Math.min(SALES_TOTAL_EDITION, salesCount + qty);
-        setSecureStorage(SALES_STORAGE_KEY, salesCount);
-        updateSalesCounterUI();
-    }
-
-    function getRemainingStock() {
-        return Math.max(0, SALES_TOTAL_EDITION - salesCount);
-    }
-
-    // Initialize sales counter on page load
-    updateSalesCounterUI();
 
     /* ==========================================================================
        1. NAVIGATION & MOBILE MENU
@@ -871,15 +780,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function addToCart(id, name, price, image) {
-        // Stock validation for CD items
-        if (id.includes('anfang') || id.includes('cd')) {
-            const remaining = getRemainingStock();
-            const currentInCart = cart.filter(item => item.id === id).reduce((sum, item) => sum + item.qty, 0);
-            if (currentInCart + 1 > remaining) {
-                alert(`Es sind nur noch ${remaining} Einheiten verfügbar.`);
-                return;
-            }
-        }
 
         const existingItem = cart.find(item => item.id === id);
         if (existingItem) {
@@ -902,14 +802,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newQty <= 0) {
                 removeFromCart(id);
                 return;
-            }
-            // Stock validation for CD items on increment
-            if (amount > 0 && (id.includes('anfang') || id.includes('cd'))) {
-                const remaining = getRemainingStock();
-                if (newQty > remaining) {
-                    alert(`Es sind nur noch ${remaining} Einheiten verfügbar.`);
-                    return;
-                }
             }
             item.qty = newQty;
         }
@@ -1141,11 +1033,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 submitBtn.textContent = 'Weiterleitung zu Stripe...';
 
-                // Increment sales counter by the actual CD quantity purchased
-                const cdItem = cart.find(item => item.id.includes('anfang') || item.id.includes('cd'));
-                if (cdItem) {
-                    incrementSalesCount(cdItem.qty);
-                }
 
                 cart = [];
                 updateCart();
