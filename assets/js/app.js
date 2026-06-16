@@ -437,25 +437,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         oldAudio.addEventListener('pause', () => {
             setOldPlayState(false);
-            if (oldMockInterval) {
-                clearInterval(oldMockInterval);
-            }
         });
 
         oldPlayBtn.addEventListener('click', () => {
             if (oldAudio.paused) {
+                // Optimistic UI update
+                setOldPlayState(true);
+                
                 oldPlayPromise = oldAudio.play();
                 if (oldPlayPromise !== undefined) {
                     oldPlayPromise.catch(err => {
+                        // Revert UI if play fails
+                        setOldPlayState(false);
                         if (err.name === 'AbortError') {
                             console.log("Old audio play interrupted by pause.");
                             return;
                         }
-                        console.log("Old audio play blocked, simulating:", err);
-                        simulateOldProgress();
+                        console.error("Old audio play failed:", err);
                     });
                 }
             } else {
+                // Optimistic UI update
+                setOldPlayState(false);
                 oldAudio.pause();
             }
         });
@@ -568,31 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    let oldMockInterval = null;
-    function simulateOldProgress() {
-        if (oldMockInterval) clearInterval(oldMockInterval);
-        
-        let duration = oldAudio.duration || 300;
-        oldTimeDuration.textContent = formatTime(duration);
-        
-        oldMockInterval = setInterval(() => {
-            // Clear if UI returns to paused state
-            if (!oldPlayIcon.classList.contains('hidden')) {
-                clearInterval(oldMockInterval);
-                return;
-            }
-            if (oldAudio.currentTime >= duration) {
-                oldAudio.currentTime = 0;
-                setOldPlayState(false);
-                clearInterval(oldMockInterval);
-                return;
-            }
-            if (!isSeeking) {
-                oldAudio.currentTime += 1;
-                updateOldProgress(oldAudio.currentTime);
-            }
-        }, 1000);
-    }
+
 
     /* ==========================================================================
        4. AUDIO PLAYER 2: CD SHOP PREVIEW PLAYER
