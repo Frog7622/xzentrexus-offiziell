@@ -236,15 +236,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const header = document.getElementById('header');
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const navMenu = document.getElementById('nav-menu');
+    const navLinks = document.querySelectorAll('.nav-link');
 
-    // Header scroll background change
+    // Scroll handling optimization
+    let scrollScheduled = false;
+    let cachedSections = [];
+    const sections = document.querySelectorAll('section[id]');
+
+    function updateSectionOffsets() {
+        cachedSections = Array.from(sections).map(section => ({
+            id: section.getAttribute('id'),
+            top: section.offsetTop,
+            height: section.offsetHeight
+        }));
+    }
+
+    // Cache immediately and on load/resize
+    updateSectionOffsets();
+    window.addEventListener('load', updateSectionOffsets);
+    window.addEventListener('resize', updateSectionOffsets);
+
     window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
+        if (!scrollScheduled) {
+            scrollScheduled = true;
+            window.requestAnimationFrame(() => {
+                const scrollY = window.scrollY;
+                
+                // 1. Header scroll background change
+                if (scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+
+                // 2. Active link highlight (Scroll spy)
+                let currentSectionId = '';
+                const scrollPosition = scrollY + 150;
+
+                for (let i = 0; i < cachedSections.length; i++) {
+                    const section = cachedSections[i];
+                    if (scrollPosition >= section.top && scrollPosition < section.top + section.height) {
+                        currentSectionId = section.id;
+                        break;
+                    }
+                }
+
+                navLinks.forEach(link => {
+                    const isHrefMatch = link.getAttribute('href') === `#${currentSectionId}`;
+                    if (isHrefMatch) {
+                        if (!link.classList.contains('active')) {
+                            link.classList.add('active');
+                        }
+                    } else {
+                        if (link.classList.contains('active')) {
+                            link.classList.remove('active');
+                        }
+                    }
+                });
+
+                scrollScheduled = false;
+            });
         }
-    });
+    }, { passive: true });
 
     // Mobile menu toggle
     if (mobileMenuBtn && navMenu) {
@@ -284,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Close mobile menu when clicking a link
-    const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             if (navMenu && navMenu.classList.contains('open')) {
@@ -315,27 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Smooth Scroll spy (Active link highlight)
-    const sections = document.querySelectorAll('section[id]');
-    window.addEventListener('scroll', () => {
-        let currentSectionId = '';
-        const scrollPosition = window.scrollY + 150;
-
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                currentSectionId = section.getAttribute('id');
-            }
-        });
-
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${currentSectionId}`) {
-                link.classList.add('active');
-            }
-        });
-    });
+    // Scroll spy now handled under the optimized passive scroll listener in section 1.
 
     /* ==========================================================================
        2. SCROLL ANIMATIONS (INTERSECTION OBSERVER)
@@ -395,25 +427,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let oldPlayPromise = null;
     if (oldPlayBtn && oldAudio) {
-        oldPlayBtn.addEventListener('click', () => {
-            // Stop shop audio if playing
+        // Event-driven state updates for old releases audio
+        oldAudio.addEventListener('play', () => {
             if (shopAudio && !shopAudio.paused) {
                 shopAudio.pause();
-                resetShopIcons();
             }
+            setOldPlayState(true);
+        });
 
-            // Determine action based on UI state (is the play icon currently visible?)
-            const isPlayIconVisible = !oldPlayIcon.classList.contains('hidden');
+        oldAudio.addEventListener('pause', () => {
+            setOldPlayState(false);
+            if (oldMockInterval) {
+                clearInterval(oldMockInterval);
+            }
+        });
 
-            if (isPlayIconVisible) {
-                // UI shows Play -> User wants to PLAY
-                setOldPlayState(true);
-                
+        oldPlayBtn.addEventListener('click', () => {
+            if (oldAudio.paused) {
                 oldPlayPromise = oldAudio.play();
                 if (oldPlayPromise !== undefined) {
-                    oldPlayPromise.then(() => {
-                        // Successfully playing
-                    }).catch(err => {
+                    oldPlayPromise.catch(err => {
                         if (err.name === 'AbortError') {
                             console.log("Old audio play interrupted by pause.");
                             return;
@@ -423,22 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             } else {
-                // UI shows Pause -> User wants to PAUSE
-                setOldPlayState(false);
-                
-                if (oldPlayPromise !== undefined && oldPlayPromise !== null) {
-                    oldPlayPromise.then(() => {
-                        oldAudio.pause();
-                    }).catch(() => {
-                        oldAudio.pause();
-                    });
-                } else {
-                    oldAudio.pause();
-                }
-
-                if (oldMockInterval) {
-                    clearInterval(oldMockInterval);
-                }
+                oldAudio.pause();
             }
         });
 
@@ -473,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         oldAudio.addEventListener('ended', () => {
-            setOldPlayState(false);
             oldAudio.currentTime = 0;
             oldProgressFill.style.width = '0%';
             oldProgressHandle.style.left = '0%';
@@ -496,43 +513,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateOldProgress(targetTime);
             };
 
+            const onMouseMove = (e) => {
+                handleProgressSeek(e.clientX);
+            };
+
+            const onMouseUp = () => {
+                isSeeking = false;
+                oldProgressBg.classList.remove('dragging');
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+            };
+
             oldProgressBg.addEventListener('mousedown', (e) => {
                 isSeeking = true;
                 oldProgressBg.classList.add('dragging');
                 handleProgressSeek(e.clientX);
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (isSeeking) {
-                    handleProgressSeek(e.clientX);
-                }
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (isSeeking) {
-                    isSeeking = false;
-                    oldProgressBg.classList.remove('dragging');
-                }
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
             });
 
             // Touch support
+            const onTouchMove = (e) => {
+                if (e.touches && e.touches[0]) {
+                    handleProgressSeek(e.touches[0].clientX);
+                }
+            };
+
+            const onTouchEnd = () => {
+                isSeeking = false;
+                oldProgressBg.classList.remove('dragging');
+                window.removeEventListener('touchmove', onTouchMove);
+                window.removeEventListener('touchend', onTouchEnd);
+            };
+
             oldProgressBg.addEventListener('touchstart', (e) => {
                 isSeeking = true;
                 oldProgressBg.classList.add('dragging');
-                handleProgressSeek(e.touches[0].clientX);
-            });
-
-            window.addEventListener('touchmove', (e) => {
-                if (isSeeking) {
+                if (e.touches && e.touches[0]) {
                     handleProgressSeek(e.touches[0].clientX);
                 }
-            });
-
-            window.addEventListener('touchend', () => {
-                if (isSeeking) {
-                    isSeeking = false;
-                    oldProgressBg.classList.remove('dragging');
-                }
+                window.addEventListener('touchmove', onTouchMove, { passive: true });
+                window.addEventListener('touchend', onTouchEnd);
             });
         }
     }
@@ -593,51 +614,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let shopPlayPromise = null;
     if (shopTrackRows.length > 0 && shopAudio) {
+        // Event-driven state updates for shop audio
+        shopAudio.addEventListener('play', () => {
+            // Stop old releases audio
+            if (oldAudio && !oldAudio.paused) {
+                oldAudio.pause();
+                setOldPlayState(false);
+            }
+            // Find active row and show pause icon
+            if (activeShopRow) {
+                const playIcon = activeShopRow.querySelector('.shop-play-icon');
+                const pauseIcon = activeShopRow.querySelector('.shop-pause-icon');
+                if (playIcon && pauseIcon) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                }
+            }
+        });
+
+        shopAudio.addEventListener('pause', () => {
+            resetShopIcons();
+        });
+
         shopTrackRows.forEach(row => {
             row.addEventListener('click', () => {
-                // Stop old releases audio
-                if (oldAudio && !oldAudio.paused) {
-                    oldAudio.pause();
-                    setOldPlayState(false);
-                }
-
                 const isCurrentlyActive = row.classList.contains('active');
-                const playIcon = row.querySelector('.shop-play-icon');
-                const pauseIcon = row.querySelector('.shop-pause-icon');
 
                 if (isCurrentlyActive) {
-                    const isPlayIconVisible = !playIcon.classList.contains('hidden');
+                    const playIcon = row.querySelector('.shop-play-icon');
+                    const isPlayIconVisible = playIcon && !playIcon.classList.contains('hidden');
 
                     if (isPlayIconVisible) {
-                        playIcon.classList.add('hidden');
-                        pauseIcon.classList.remove('hidden');
-                        
                         shopPlayPromise = shopAudio.play();
                         if (shopPlayPromise !== undefined) {
-                            shopPlayPromise.then(() => {
-                                // Successfully playing
-                            }).catch(err => {
-                                if (err.name === 'AbortError') {
-                                    console.log("Shop audio play interrupted by pause.");
-                                    return;
-                                }
-                                playIcon.classList.add('hidden');
-                                pauseIcon.classList.remove('hidden');
+                            shopPlayPromise.catch(err => {
+                                if (err.name === 'AbortError') return;
+                                console.error("Shop audio play failed:", err);
                             });
                         }
                     } else {
-                        playIcon.classList.remove('hidden');
-                        pauseIcon.classList.add('hidden');
-
-                        if (shopPlayPromise !== undefined && shopPlayPromise !== null) {
-                            shopPlayPromise.then(() => {
-                                shopAudio.pause();
-                            }).catch(() => {
-                                shopAudio.pause();
-                            });
-                        } else {
-                            shopAudio.pause();
-                        }
+                        shopAudio.pause();
                     }
                 } else {
                     shopTrackRows.forEach(r => r.classList.remove('active'));
@@ -651,20 +667,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     shopPlayPromise = shopAudio.play();
                     if (shopPlayPromise !== undefined) {
-                        shopPlayPromise.then(() => {
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
-                        }).catch(err => {
-                            if (err.name === 'AbortError') {
-                                console.log("Shop audio play source transition interrupted by pause.");
-                                return;
-                            }
-                            playIcon.classList.add('hidden');
-                            pauseIcon.classList.remove('hidden');
+                        shopPlayPromise.catch(err => {
+                            if (err.name === 'AbortError') return;
+                            console.error("Shop audio play transition failed:", err);
                         });
-                    } else {
-                        playIcon.classList.add('hidden');
-                        pauseIcon.classList.remove('hidden');
                     }
                 }
             });

@@ -104,7 +104,7 @@
                 <div class="about-content-wrapper" data-scroll-animate="fade-up">
                     <div class="about-image-centered">
                         <div class="about-image-glow"></div>
-                        <img src="assets/images/portrait_hand_out.jpg" alt="xzentrexus Portrait" class="about-image">
+                        <img src="assets/images/portrait_hand_out.jpg" alt="xzentrexus Portrait" class="about-image" loading="lazy" decoding="async">
                     </div>
                     <div class="about-text-content-centered">
                         <h3 class="about-subtitle text-center">Wer bin ich ?</h3>
@@ -149,7 +149,7 @@
                 <div class="old-release-container" data-scroll-animate="fade-up">
                     <div class="old-release-card">
                         <div class="old-release-cover-wrapper">
-                            <img src="assets/images/cover_manchmal.png" alt="X.Manchmal kommt die Wahrheit.z Cover" class="old-release-cover">
+                            <img src="assets/images/cover_manchmal.png" alt="X.Manchmal kommt die Wahrheit.z Cover" class="old-release-cover" loading="lazy" decoding="async">
                             <div class="cd-vinyl-effect"></div>
                         </div>
                         <div class="old-release-info">
@@ -202,17 +202,17 @@
                             <div class="product-slider" id="product-slider">
                                 <div class="product-slide active">
                                     <div class="cd-container-3d">
-                                        <img src="assets/images/anfang_cd.jpg" alt="xzentrexus Anfang CD Jewel Case" class="cd-mockup">
+                                        <img src="assets/images/anfang_cd.jpg" alt="xzentrexus Anfang CD Jewel Case" class="cd-mockup" loading="lazy" decoding="async">
                                     </div>
                                 </div>
                                 <div class="product-slide">
                                     <div class="cd-container-3d">
-                                        <img src="assets/images/cd_zugeklappt.png" alt="xzentrexus Anfang CD zugeklappt" class="cd-mockup">
+                                        <img src="assets/images/cd_zugeklappt.png" alt="xzentrexus Anfang CD zugeklappt" class="cd-mockup" loading="lazy" decoding="async">
                                     </div>
                                 </div>
                                 <div class="product-slide">
                                     <div class="cd-container-3d">
-                                        <img src="assets/images/cd_in_der_hand.png" alt="xzentrexus Anfang CD in der Hand" class="cd-mockup">
+                                        <img src="assets/images/cd_in_der_hand.png" alt="xzentrexus Anfang CD in der Hand" class="cd-mockup" loading="lazy" decoding="async">
                                     </div>
                                 </div>
                             </div>
@@ -368,7 +368,7 @@
                 <div class="portfolio-grid">
                     <!-- item 1 -->
                     <div class="portfolio-item" data-scroll-animate="fade-up">
-                        <img src="assets/images/cd_zugeklappt.png" alt="CD Jewel Case Design" class="portfolio-img">
+                        <img src="assets/images/cd_zugeklappt.png" alt="CD Jewel Case Design" class="portfolio-img" loading="lazy" decoding="async">
                         <div class="portfolio-overlay">
                             <div class="portfolio-info">
                                 <span class="portfolio-tag">Cover Art / Print</span>
@@ -486,10 +486,9 @@
             <h3 class="modal-title">Bestellung abschließen</h3>
             <div class="modal-desc">
                 <p class="modal-desc-highlight">Fast geschafft.</p>
-                <p>Fülle die folgenden Felder aus, um deine Vorbestellung abzuschließen.</p>
-                <p>Nach deiner Bestellung erhältst du sofort eine Bestätigungs-E-Mail mit allen Informationen zu Zahlung, Versand und deiner Bestellung.</p>
-                <p>Sobald die Zahlung erfolgreich eingegangen ist, wird deine CD für dich reserviert. Nach Veröffentlichung wird sie an die angegebene Lieferadresse versendet.</p>
-                <p>Digitale Inhalte und Updates erhältst du automatisch per E-Mail.</p>
+                <p>Gib deine Lieferdaten ein. Du wirst anschließend direkt zu Stripe weitergeleitet, um die Zahlung sicher abzuschließen.</p>
+                <p><strong>Wichtig:</strong> Deine Bestellung ist erst nach erfolgreicher Bezahlung auf Stripe abgeschlossen. Erst dann wird deine CD für dich reserviert.</p>
+                <p>Nach Zahlungseingang senden wir dir eine Bestätigung an deine E-Mail-Adresse. Der Versand der physischen CD erfolgt nach Veröffentlichung.</p>
                 <p class="modal-desc-muted">Deine Daten werden ausschließlich zur Bearbeitung deiner Bestellung verwendet.</p>
             </div>
             <form id="checkout-form">
@@ -549,15 +548,10 @@
 
                 <!-- Legal disclaimer -->
                 <p class="checkout-disclaimer">
-                    Mit Klick auf „Kostenpflichtig bestellen“ gibst du eine verbindliche Bestellung ab.
+                    Mit Klick auf „Weiter zur Zahlung“ wirst du zur sicheren Zahlungsseite von Stripe weitergeleitet.
                 </p>
 
-                <button type="submit" class="btn btn-primary btn-full">Kostenpflichtig bestellen</button>
-                <div class="stripe-link-wrapper">
-                    <a href="https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00" target="_blank" rel="noopener noreferrer" class="stripe-fallback-link">
-                        Alternativ: Direkt über Stripe bezahlen
-                    </a>
-                </div>
+                <button type="submit" class="btn btn-primary btn-full">Weiter zur Zahlung</button>
             </form>
         </div>
     </div>
@@ -627,7 +621,7 @@
 
                 <h4>3. Hosting</h4>
                 <p>Diese Website wird über GitHub Pages bereitgestellt.</p>
-                <p>Beim Besuch der Website können durch den Hosting-Anbieter technisch notwendige Informationen verarbeitet werden, insbesondere:</p>
+                <p>Anbieter ist GitHub Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA. Beim Besuch der Website können durch den Hosting-Anbieter technisch notwendige Informationen in Server-Logfiles verarbeitet werden, insbesondere:</p>
                 <ul>
                     <li>IP-Adresse</li>
                     <li>Datum und Uhrzeit des Zugriffs</li>
@@ -635,28 +629,28 @@
                     <li>Betriebssystem</li>
                     <li>Referrer-URL</li>
                 </ul>
-                <p>Die Verarbeitung erfolgt zur Bereitstellung und Sicherheit der Website.</p>
+                <p>Die Verarbeitung erfolgt auf Grundlage unseres berechtigten Interesses an einer sicheren und stabilen Bereitstellung der Website (Art. 6 Abs. 1 lit. f DSGVO). Die Übermittlung von Daten in die USA ist durch das EU-US Data Privacy Framework (GitHub Inc. ist zertifiziert) abgesichert.</p>
 
-                <h4>4. Kontaktaufnahme</h4>
-                <p>Wenn Sie mich per E-Mail oder Kontaktformular kontaktieren, werden die von Ihnen übermittelten Daten ausschließlich zur Bearbeitung Ihrer Anfrage verwendet.</p>
-                <p>Die Daten werden nicht ohne Ihre ausdrückliche Einwilligung an Dritte weitergegeben.</p>
+                <h4>4. Kontaktaufnahme und Formulare (Formspree)</h4>
+                <p>Wenn Sie uns per E-Mail, Kontaktformular oder Bestellformular kontaktieren, werden die von Ihnen übermittelten Daten zur Bearbeitung Ihrer Anfrage sowie zur Abwicklung Ihrer Bestellung verarbeitet. Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung und vorvertragliche Maßnahmen) sowie Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer effizienten Anfragenverwaltung).</p>
+                <p>Für den Empfang und die Weiterleitung dieser Daten nutzen wir den Formulardienst Formspree. Anbieter ist Formspree, Inc., 21750 Hardy Oak Blvd Ste 104, San Antonio, TX 78258, USA. Ihre eingegebenen Daten werden an Server von Formspree in den USA übertragen. Die Sicherheit wird durch den Abschluss von EU-Standardvertragsklauseln gewährleistet.</p>
 
-                <h4>5. Externe Inhalte</h4>
-                <p>Auf dieser Website können Inhalte von Drittanbietern eingebunden werden.</p>
-                <p>Hierzu können insbesondere gehören:</p>
+                <h4>5. Zahlungsabwicklung (Stripe)</h4>
+                <p>Für die Abwicklung von Zahlungen nutzen wir den Dienst Stripe. Anbieter für Nutzer im Europäischen Wirtschaftsraum (EWR) ist Stripe Payments Europe, Ltd., 1 Grand Canal Street Lower, Dublin, Irland. Bestelldaten und Zahlungsinformationen werden zur Vertragserfüllung an Stripe übermittelt (Art. 6 Abs. 1 lit. b DSGVO). Stripe behält sich vor, Daten zur Betrugsprävention und Überwachung an die Stripe, Inc. in den USA zu übertragen. Stripe, Inc. ist unter dem EU-US Data Privacy Framework zertifiziert.</p>
+
+                <h4>6. Externe Verlinkungen (Social Media & Streaming)</h4>
+                <p>Auf dieser Website sind Verlinkungen zu Drittanbietern enthalten (YouTube, Spotify, Instagram). Es handelt sich hierbei um einfache externe Links. Beim Laden dieser Website werden keine Daten an diese Anbieter übertragen. Erst wenn Sie einen Link anklicken und die Plattform aufrufen, werden Ihre Daten an den jeweiligen Anbieter übermittelt. Es gelten die Datenschutzbestimmungen der Betreiber:</p>
                 <ul>
                     <li>YouTube</li>
                     <li>Spotify</li>
                     <li>Instagram</li>
                 </ul>
-                <p>Beim Aufruf solcher Inhalte können personenbezogene Daten (z. B. IP-Adresse) an die jeweiligen Anbieter übermittelt werden.</p>
-                <p>Es gelten die Datenschutzbestimmungen der jeweiligen Anbieter.</p>
 
-                <h4>6. Cookies</h4>
+                <h4>7. Cookies</h4>
                 <p>Diese Website verwendet derzeit keine eigenen Cookies zur Analyse des Nutzerverhaltens.</p>
                 <p>Technisch notwendige Cookies können durch den Hosting-Anbieter oder eingebundene Dienste verwendet werden.</p>
 
-                <h4>7. Ihre Rechte</h4>
+                <h4>8. Ihre Rechte</h4>
                 <p>Sie haben jederzeit das Recht auf:</p>
                 <ul>
                     <li>Auskunft über gespeicherte Daten</li>
@@ -668,7 +662,7 @@
                 </ul>
                 <p>Zudem besteht ein Beschwerderecht bei einer zuständigen Datenschutzaufsichtsbehörde.</p>
 
-                <h4>8. Änderungen</h4>
+                <h4>9. Änderungen</h4>
                 <p>Diese Datenschutzerklärung kann angepasst werden, wenn sich technische oder rechtliche Anforderungen ändern.</p>
                 <p>Stand: Juni 2026</p>
             </div>
@@ -750,7 +744,7 @@
     </div>
 
     <!-- HTML5 Audio Elements (Hidden) -->
-    <audio id="old-releases-audio" src="assets/music/manchmal_kommt_die_wahrheit.wav" preload="auto"></audio>
+    <audio id="old-releases-audio" src="assets/music/manchmal_kommt_die_wahrheit.wav" preload="metadata"></audio>
     <audio id="shop-preview-audio" preload="none"></audio>
 
     <!-- Custom App JS -->
