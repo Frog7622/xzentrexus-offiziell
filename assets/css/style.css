@@ -507,9 +507,7 @@ button, input, textarea {
     background: linear-gradient(180deg, #FFFFFF 0%, #B3B3B3 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.1));
-    animation: glowText 4s infinite alternate;
-    will-change: filter;
+    filter: none;
     
     /* Layout */
     display: inline-block;
@@ -571,11 +569,6 @@ button, input, textarea {
     0% { transform: translate(-50%, 0); opacity: 1; }
     50% { transform: translate(-50%, 10px); opacity: 0.5; }
     100% { transform: translate(-50%, 0); opacity: 1; }
-}
-
-@keyframes glowText {
-    0% { filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.05)); }
-    100% { filter: drop-shadow(0 0 20px rgba(0, 212, 212, 0.2)); }
 }
 
 @media (max-width: 1100px) {
@@ -2450,7 +2443,10 @@ button, input, textarea {
     animation: fadeUpIn 1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
-.hero-title.animate-fade-up { animation-delay: 0.2s; }
+.hero-title.animate-fade-up {
+    animation: fadeUpIn 1s cubic-bezier(0.25, 0.8, 0.25, 1) 0.2s forwards,
+               glowText 3s ease-in-out 1.2s infinite alternate;
+}
 .hero-subtitle.animate-fade-up { animation-delay: 0.4s; }
 .hero-ctas.animate-fade-up { animation-delay: 0.6s; }
 
@@ -3164,5 +3160,647 @@ body.modal-open {
     .modal-content textarea, 
     .modal-content select {
         font-size: 16px !important;
+    }
+}
+
+/* ==========================================================================
+   16. INTERACTIVE COMPANION "XZ" STYLE SYSTEM
+   ========================================================================== */
+.xz-companion-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    z-index: 1050;
+    pointer-events: none;
+}
+
+.xz-companion-body {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    left: -26px;
+    top: -26px;
+    cursor: pointer;
+    pointer-events: auto;
+    will-change: transform;
+    transform: translate3d(0, 0, 0);
+    filter: drop-shadow(0 0 10px rgba(0, 212, 212, 0.2));
+    transition: filter var(--transition-speed);
+}
+
+.xz-companion-body:hover {
+    filter: drop-shadow(0 0 18px rgba(0, 212, 212, 0.5));
+}
+
+.xz-companion-body:focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 4px;
+    border-radius: 50%;
+}
+
+.xz-drone-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+    z-index: 2;
+    animation: xzDroneHover 2.5s ease-in-out infinite alternate;
+}
+
+/* Idle eye pulsing */
+.xz-eye {
+    animation: xzEyePulse 2s ease-in-out infinite alternate;
+}
+
+.xz-eye-left {
+    transform-origin: 34.5px 40px;
+}
+
+.xz-eye-right {
+    transform-origin: 65.5px 40px;
+}
+
+/* Listening eye styling - slightly larger, wide-open pulse animation */
+.state-listening .xz-eye {
+    animation: xzEyeListeningPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes xzEyeListeningPulse {
+    0% { opacity: 0.85; transform: scaleY(1.30) scaleX(1.15); }
+    100% { opacity: 1; transform: scaleY(1.42) scaleX(1.15); }
+}
+
+/* Brain Ride Styles */
+.xz-asset-brain {
+    position: absolute;
+    width: 76px;
+    height: 60px;
+    bottom: -18px;
+    left: -12px;
+    z-index: 1;
+    pointer-events: none;
+    transform-origin: center top;
+    animation: brainRideFloat 1.8s ease-in-out infinite alternate;
+}
+
+/* Car Ride Styles */
+.xz-asset-car {
+    position: absolute;
+    width: 90px;
+    height: 53px;
+    bottom: -12px;
+    left: -19px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+/* Road lines container (sits under the car bumper) */
+.xz-road-container {
+    position: absolute;
+    width: 70px;
+    height: 35px;
+    bottom: -15px;
+    left: 10px;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Center road line dash animation to simulate driving forward */
+.state-car-ride .xz-road-center-line {
+    animation: xzRoadDashScroll 0.22s linear infinite;
+}
+
+@keyframes xzRoadDashScroll {
+    to {
+        stroke-dashoffset: -14;
+    }
+}
+
+/* Tire spinning effect: scrolls dashed outline of front wheels */
+.state-car-ride .xz-wheel rect {
+    stroke-dasharray: 4, 3;
+    animation: xzTireSpin 0.16s linear infinite;
+}
+
+@keyframes xzTireSpin {
+    to {
+        stroke-dashoffset: -7;
+    }
+}
+
+/* Make body sit lower when inside the car */
+.xz-companion-body.state-car-ride .xz-drone-svg {
+    transform-origin: center bottom;
+}
+
+/* Robotic Hands styling */
+.xz-hand {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    top: 14px;
+    z-index: 10;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.xz-hand-left {
+    left: -18px;
+}
+
+.xz-hand-right {
+    right: -18px;
+}
+
+/* Active drag hands wiggling animation */
+.state-dragging .xz-hand {
+    display: block !important;
+    animation: xzHandWiggle 0.12s ease-in-out infinite alternate;
+}
+
+.state-dragging .xz-hand-left {
+    transform-origin: 22px 15px;
+}
+
+.state-dragging .xz-hand-right {
+    transform-origin: 2px 15px;
+}
+
+@keyframes xzHandWiggle {
+    0% {
+        transform: rotate(-25deg) translateY(-2px);
+    }
+    100% {
+        transform: rotate(25deg) translateY(2px);
+    }
+}
+
+/* Interactive Glassmorphic Chat Menu */
+.xz-companion-menu {
+    position: absolute;
+    width: 290px;
+    max-width: 90vw;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 212, 212, 0.25);
+    box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.60), 0 0 15px rgba(0, 212, 212, 0.1);
+    border-radius: 16px;
+    padding: 1.15rem;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    pointer-events: auto;
+    z-index: 1060;
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.xz-companion-menu.open {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+.xz-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.xz-menu-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-teal);
+    text-shadow: 0 0 8px var(--color-teal-glow);
+}
+
+.xz-menu-close-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: color 0.2s ease;
+}
+
+.xz-menu-close-btn:hover {
+    color: #ff5e5e;
+}
+
+.xz-dialog-box {
+    background: rgba(255, 255, 255, 0.02);
+    border-left: 3px solid var(--color-teal);
+    padding: 0.75rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1rem;
+    min-height: 54px;
+}
+
+#xz-dialog-text {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.xz-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.xz-option-btn {
+    width: 100%;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.xz-option-btn:hover {
+    background: var(--color-teal-dim);
+    border-color: var(--color-teal);
+    color: var(--color-teal);
+    transform: translateX(3px);
+}
+
+.xz-back-btn {
+    margin-top: 0.75rem;
+    width: 100%;
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: var(--color-text-muted);
+    border-radius: 8px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.xz-back-btn:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+}
+
+/* Floating Music Notes */
+.xz-music-note {
+    position: absolute;
+    pointer-events: none;
+    color: var(--color-teal);
+    font-size: 1.35rem;
+    font-weight: bold;
+    z-index: 1049;
+    will-change: transform, opacity;
+    animation: xzNoteFloat 2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* Animation Keyframes */
+@keyframes xzDroneHover {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-4px); }
+}
+
+@keyframes xzDroneCarHover {
+    0%, 100% { transform: translateY(6px) scale(0.9) rotate(0deg); }
+    50% { transform: translateY(7px) scale(0.9) rotate(0.5deg); }
+}
+
+@keyframes xzEyePulse {
+    0% { opacity: 0.75; transform: scaleY(0.95); }
+    100% { opacity: 1; transform: scaleY(1.05); }
+}
+
+@keyframes brainRideFloat {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(4px) scale(0.98); }
+}
+
+@keyframes carRideVibrate {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1.5px); }
+}
+
+@keyframes xzNoteFloat {
+    0% {
+        transform: translate3d(0, 0, 0) scale(0.5) rotate(0deg);
+        opacity: 0;
+    }
+    15% {
+        opacity: 1;
+        transform: translate3d(0, -15px, 0) scale(1) rotate(5deg);
+    }
+    100% {
+        transform: translate3d(var(--x-drift, 25px), -90px, 0) scale(0.8) rotate(var(--rot-drift, 25deg));
+        opacity: 0;
+    }
+}
+
+/* Avoid scrollbar issues */
+body {
+    overflow-x: hidden;
+}
+
+/* ── XZ Dock Orb — visual language matching XZ ──────────────────────────── */
+.xz-dock-orb {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 9998;
+    outline: none;
+    pointer-events: auto;
+
+    /* XZ-style dark body — matches his own body gradient */
+    background: radial-gradient(circle at 40% 32%,
+        #1c2b2b 0%,
+        #0c1616 50%,
+        #020808 100%
+    );
+
+    /* Outer stroke ring — mirrors XZ's circle border */
+    border: 2.5px solid rgba(0, 212, 212, 0.55);
+
+    /* Layered glow matching XZ's drop-shadow filter */
+    box-shadow:
+        0 0 0 1px rgba(0, 212, 212, 0.08),
+        0 0 16px rgba(0, 212, 212, 0.45),
+        0 0 5px  rgba(0, 212, 212, 0.3),
+        inset 0 0 22px rgba(0, 0, 0, 0.65),
+        inset 0 2px 6px rgba(0, 212, 212, 0.06);
+
+    transition: border-color 0.45s ease, box-shadow 0.45s ease, transform 0.2s ease;
+}
+
+/* Rotating outer energy arc — like a tech orbit ring */
+.xz-dock-orb::before {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--color-teal);
+    border-right-color: rgba(0, 212, 212, 0.28);
+    border-bottom-color: transparent;
+    border-left-color: rgba(0, 212, 212, 0.08);
+    animation: xzOrbArcSpin 2.6s linear infinite;
+    transition: border-top-color 0.45s ease, border-right-color 0.45s ease;
+}
+
+/* Dual LED eye-slits — mirrors XZ's own LED eyes, teal-lit */
+.xz-dock-orb::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    width: 34px;
+    height: 6px;
+    border-radius: 3px;
+    /* Two separate LED bars — same two-eye layout as XZ */
+    background: linear-gradient(
+        90deg,
+        transparent        0%,
+        transparent       22%,
+        var(--color-teal) 22%,
+        var(--color-teal) 42%,
+        transparent       42%,
+        transparent       58%,
+        var(--color-teal) 58%,
+        var(--color-teal) 78%,
+        transparent       78%,
+        transparent      100%
+    );
+    box-shadow:
+        0 0 7px var(--color-teal),
+        0 0 14px rgba(0, 212, 212, 0.45);
+    transition: background 0.45s ease, box-shadow 0.45s ease;
+}
+
+.xz-dock-orb:hover {
+    transform: scale(1.07);
+    filter: brightness(1.15);
+}
+
+/* ── Free-flight state — teal, gently pulsing ─────────────────────────────── */
+.xz-dock-orb--free {
+    border-color: rgba(0, 212, 212, 0.65);
+    animation: xzOrbPulse 2.4s ease-in-out infinite;
+}
+
+/* ── Docked state — solid red, locked / no rotation ──────────────────────── */
+.xz-dock-orb--docked {
+    border-color: rgba(200, 30, 30, 0.75);
+    background: radial-gradient(circle at 40% 32%,
+        #2b1010 0%,
+        #160606 50%,
+        #040101 100%
+    );
+    box-shadow:
+        0 0 0 1px rgba(200, 20, 20, 0.1),
+        0 0 20px rgba(200, 20, 20, 0.65),
+        0 0 7px  rgba(200, 20, 20, 0.45),
+        inset 0 0 22px rgba(0, 0, 0, 0.65),
+        inset 0 2px 6px rgba(200, 20, 20, 0.06);
+    animation: none;
+}
+
+.xz-dock-orb--docked::before {
+    border-top-color:   #cc1111;
+    border-right-color: rgba(200, 20, 20, 0.28);
+    border-left-color:  rgba(200, 20, 20, 0.08);
+    animation: xzOrbArcSpin 4s linear infinite; /* slower, warning-signal feel */
+}
+
+.xz-dock-orb--docked::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 22%,
+        #cc2222    22%,
+        #cc2222    42%,
+        transparent 42%,
+        transparent 58%,
+        #cc2222    58%,
+        #cc2222    78%,
+        transparent 78%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 7px #cc2222,
+        0 0 14px rgba(200, 20, 20, 0.45);
+}
+
+/* Arc orbit spin */
+@keyframes xzOrbArcSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Breathing glow pulse for free state */
+@keyframes xzOrbPulse {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px rgba(0, 212, 212, 0.08),
+            0 0 12px rgba(0, 212, 212, 0.4),
+            0 0 4px  rgba(0, 212, 212, 0.25),
+            inset 0 0 22px rgba(0, 0, 0, 0.65),
+            inset 0 2px 6px rgba(0, 212, 212, 0.05);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px rgba(0, 212, 212, 0.15),
+            0 0 26px rgba(0, 212, 212, 0.85),
+            0 0 12px rgba(0, 212, 212, 0.55),
+            inset 0 0 22px rgba(0, 0, 0, 0.65),
+            inset 0 2px 6px rgba(0, 212, 212, 0.1);
+        transform: scale(1.05);
+    }
+}
+
+@media (max-width: 768px) {
+    .xz-dock-orb {
+        width: 50px;
+        height: 50px;
+        bottom: 14px;
+        right: 14px;
+    }
+    .xz-dock-orb::after {
+        width: 26px;
+        height: 5px;
+    }
+}
+
+/* ── XZ Sound Orb — identical visual language, positioned left of dock orb ── */
+.xz-sound-orb {
+    position: fixed;
+    bottom: 22px;
+    right: 114px;       /* 22px + 62px dock orb + 30px gap */
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 9998;
+    outline: none;
+    pointer-events: auto;
+
+    background: radial-gradient(circle at 40% 32%,
+        #1c2b2b 0%,
+        #0c1616 50%,
+        #020808 100%
+    );
+    border: 2.5px solid rgba(0, 212, 212, 0.55);
+    box-shadow:
+        0 0 0 1px rgba(0, 212, 212, 0.08),
+        0 0 16px rgba(0, 212, 212, 0.45),
+        0 0 5px  rgba(0, 212, 212, 0.3),
+        inset 0 0 22px rgba(0, 0, 0, 0.65),
+        inset 0 2px 6px rgba(0, 212, 212, 0.06);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: border-color 0.45s ease, box-shadow 0.45s ease, transform 0.2s ease;
+}
+
+/* Rotating outer energy arc — same as dock orb */
+.xz-sound-orb::before {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--color-teal);
+    border-right-color: rgba(0, 212, 212, 0.28);
+    border-bottom-color: transparent;
+    border-left-color: rgba(0, 212, 212, 0.08);
+    animation: xzOrbArcSpin 2.6s linear infinite;
+    transition: border-top-color 0.45s ease, border-right-color 0.45s ease;
+}
+
+.xz-sound-orb:hover {
+    transform: scale(1.07);
+    filter: brightness(1.15);
+}
+
+/* Speaker SVG icon inside the orb */
+.xz-sound-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--color-teal);
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 0 5px var(--color-teal));
+    transition: color 0.45s ease, filter 0.45s ease;
+}
+
+/* ── Sound ON state — teal pulse, arc spinning ──────────────────────────── */
+.xz-sound-orb--on {
+    border-color: rgba(0, 212, 212, 0.65);
+    animation: xzOrbPulse 2.4s ease-in-out infinite;
+}
+
+/* ── Sound OFF (muted) state — red, no pulse, slower red arc ────────────── */
+.xz-sound-orb--off {
+    border-color: rgba(200, 30, 30, 0.75);
+    background: radial-gradient(circle at 40% 32%,
+        #2b1010 0%,
+        #160606 50%,
+        #040101 100%
+    );
+    box-shadow:
+        0 0 0 1px rgba(200, 20, 20, 0.1),
+        0 0 14px rgba(200, 20, 20, 0.45),
+        0 0 4px  rgba(200, 20, 20, 0.2),
+        inset 0 0 22px rgba(0, 0, 0, 0.65),
+        inset 0 2px 4px rgba(200, 20, 20, 0.04);
+    animation: none;
+}
+
+.xz-sound-orb--off::before {
+    border-top-color:   #cc1111;
+    border-right-color: rgba(200, 20, 20, 0.28);
+    border-left-color:  rgba(200, 20, 20, 0.08);
+    animation: xzOrbArcSpin 4s linear infinite;
+}
+
+.xz-sound-orb--off .xz-sound-icon {
+    color: #cc2222;
+    filter: drop-shadow(0 0 5px rgba(200, 20, 20, 0.6));
+}
+
+/* Toggle icon visibility via JS class */
+.xz-sound-orb--on  .xz-sound-icon--off { display: none !important; }
+.xz-sound-orb--off .xz-sound-icon--on  { display: none !important; }
+.xz-sound-orb--off .xz-sound-icon--off { display: block !important; }
+
+@media (max-width: 768px) {
+    .xz-sound-orb {
+        width: 50px;
+        height: 50px;
+        bottom: 14px;
+        right: 92px;
     }
 }

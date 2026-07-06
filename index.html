@@ -747,6 +747,190 @@
     <audio id="old-releases-audio" src="assets/music/manchmal_kommt_die_wahrheit.wav" preload="metadata"></audio>
     <audio id="shop-preview-audio" preload="none"></audio>
 
+    <!-- Interactive Companion "XZ" -->
+    <div id="xz-companion-root" class="xz-companion-root">
+        <!-- Companion Body wrapper -->
+        <div id="xz-companion-body" class="xz-companion-body" aria-label="Interaktiver Begleiter XZ" role="button" tabindex="0">
+            <!-- Dynamic Ride Assets: Brain (Pink glowing silhouette) -->
+            <div class="xz-asset-brain" style="display: none;">
+                <svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="xz-brain-glow">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M 50 70 C 25 70, 15 55, 20 40 C 15 35, 15 20, 30 15 C 35 10, 45 15, 50 22 C 55 15, 65 10, 70 15 C 85 20, 85 35, 80 40 C 85 55, 75 70, 50 70 Z" fill="#ff7ebb" opacity="0.85" filter="url(#xz-brain-glow)" />
+                    <path d="M 50 22 L 50 70 M 35 25 Q 42 32 30 45 Q 40 50 35 60 M 65 25 Q 58 32 70 45 Q 60 50 65 60" stroke="#ffb3d9" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.9" />
+                </svg>
+            </div>
+
+            <!-- Dynamic Ride Assets: Cyberpunk Cabrio Front Car -->
+            <div class="xz-asset-car" style="display: none;">
+                <!-- Animated perspective road lines -->
+                <div class="xz-road-container">
+                    <svg viewBox="0 0 100 50" class="xz-road-svg" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="xz-road-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(0, 212, 212, 0)" />
+                                <stop offset="100%" stop-color="rgba(0, 212, 212, 0.25)" />
+                            </linearGradient>
+                        </defs>
+                        <polygon points="40,5 60,5 85,50 15,50" fill="url(#xz-road-grad)" />
+                        <line x1="40" y1="5" x2="15" y2="50" stroke="var(--color-teal)" stroke-width="1.2" opacity="0.35" />
+                        <line x1="60" y1="5" x2="85" y2="50" stroke="var(--color-teal)" stroke-width="1.2" opacity="0.35" />
+                        <line class="xz-road-center-line" x1="50" y1="5" x2="50" y2="50" stroke="var(--color-teal)" stroke-width="2" stroke-dasharray="6,8" opacity="0.8" />
+                    </svg>
+                </div>
+                
+                <!-- Front Car Chassis -->
+                <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <filter id="xz-car-glow-front">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <!-- Front wheels -->
+                    <rect x="8" y="55" width="12" height="12" rx="3" fill="#020303" stroke="var(--color-teal)" stroke-width="1" />
+                    <rect x="100" y="55" width="12" height="12" rx="3" fill="#020303" stroke="var(--color-teal)" stroke-width="1" />
+                    <!-- Bumper & spoiler -->
+                    <path d="M 12 56 L 108 56 L 112 63 Q 115 66 104 66 L 16 66 Q 5 66 8 63 Z" fill="#080a0a" stroke="var(--color-teal)" stroke-width="2.5" filter="url(#xz-car-glow-front)" />
+                    <!-- Lower chassis -->
+                    <path d="M 10 56 L 16 38 L 104 38 L 110 56 Z" fill="#121616" stroke="var(--color-teal)" stroke-width="2" />
+                    <!-- Headlights (glowing LED capsules) -->
+                    <ellipse cx="26" cy="47" rx="8" ry="4" fill="#020303" stroke="var(--color-teal)" stroke-width="1.8" />
+                    <ellipse cx="26" cy="47" rx="4" ry="1.5" fill="var(--color-teal)" filter="url(#xz-car-glow-front)" />
+                    
+                    <ellipse cx="94" cy="47" rx="8" ry="4" fill="#020303" stroke="var(--color-teal)" stroke-width="1.8" />
+                    <ellipse cx="94" cy="47" rx="4" ry="1.5" fill="var(--color-teal)" filter="url(#xz-car-glow-front)" />
+                    <!-- Grill details -->
+                    <line x1="44" y1="47" x2="76" y2="47" stroke="var(--color-teal)" stroke-width="1.5" opacity="0.5" />
+                    <line x1="47" y1="51" x2="73" y2="51" stroke="var(--color-teal)" stroke-width="1.5" opacity="0.5" />
+                    <!-- Glass windshield rim (convertible/cabrio console) -->
+                    <path d="M 22 38 L 34 23 L 86 23 L 98 38 Z" fill="none" stroke="var(--color-teal)" stroke-width="2" opacity="0.8" filter="url(#xz-car-glow-front)" />
+                </svg>
+            </div>
+
+            <!-- SVG Drone/Smiley (Main character) -->
+            <svg class="xz-drone-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="xz-body-grad" cx="50%" cy="40%" r="50%">
+                        <stop offset="0%" stop-color="#1f2424" />
+                        <stop offset="70%" stop-color="#0c0e0e" />
+                        <stop offset="100%" stop-color="#020303" />
+                    </radialGradient>
+                    <filter id="xz-eye-glow">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                    <!-- Clip to keep mask inside the body circle -->
+                    <clipPath id="xz-body-clip">
+                        <circle cx="50" cy="50" r="43" />
+                    </clipPath>
+                </defs>
+
+                <!-- Outer glowing ring / body -->
+                <circle cx="50" cy="50" r="44" fill="url(#xz-body-grad)" stroke="var(--color-teal)" stroke-width="2.5" />
+
+                <!-- ── Balaclava (full head coverage, mouth covered, eyes open) ── -->
+                <!-- Main balaclava fabric — covers top of head down through chin -->
+                <g clip-path="url(#xz-body-clip)">
+                    <!-- Top cap / crown: solid dark fabric filling upper half -->
+                    <ellipse cx="50" cy="26" rx="36" ry="28" fill="#161a1a" />
+                    <!-- Side fabric wrapping around the face down to chin -->
+                    <path d="M 14 40 Q 12 60 14 78 Q 20 88 50 90 Q 80 88 86 78 Q 88 60 86 40 Q 80 30 50 28 Q 20 30 14 40 Z"
+                          fill="#141818" />
+                    <!-- Eye slit — open gap in the balaclava fabric (left + right eye exposed) -->
+                    <!-- Rendered as a recessed darker area so fabric framing eyes is visible -->
+                    <rect x="24" y="28" width="52" height="22" rx="4" fill="#0c0e0e" />
+                    <!-- Subtle fabric texture seam above eye slit -->
+                    <path d="M 26 28 Q 50 26 74 28" stroke="#222828" stroke-width="1" fill="none" />
+                    <!-- Mouth-cover fabric panel — slightly lighter fabric across mouth area -->
+                    <rect x="28" y="58" width="44" height="24" rx="6" fill="#1a1e1e" />
+                    <!-- Subtle stitching line on mouth panel -->
+                    <path d="M 34 69 Q 50 72 66 69" stroke="#252b2b" stroke-width="1" fill="none" stroke-dasharray="3,2" />
+                    <!-- Chin seam / fold -->
+                    <path d="M 28 82 Q 50 88 72 82" stroke="#202626" stroke-width="1.2" fill="none" />
+                </g>
+
+                <!-- LED Eyes Group (for gaze tracking) -->
+                <g class="xz-eyes-group" style="transition: transform 0.1s ease-out;">
+                    <g class="xz-eyes-normal">
+                        <rect class="xz-eye xz-eye-left"  x="31" y="32" width="7" height="16" rx="3.5" fill="var(--color-teal)" filter="url(#xz-eye-glow)" />
+                        <rect class="xz-eye xz-eye-right" x="62" y="32" width="7" height="16" rx="3.5" fill="var(--color-teal)" filter="url(#xz-eye-glow)" />
+                    </g>
+                    <g class="xz-eyes-angry" style="display: none;">
+                        <!-- Slanted angry LED slits \ / -->
+                        <path class="xz-eye-angry-left"  d="M 28 35 L 38 39 L 36 43 L 26 39 Z" fill="var(--color-teal)" filter="url(#xz-eye-glow)" />
+                        <path class="xz-eye-angry-right" d="M 72 35 L 62 39 L 64 43 L 74 39 Z" fill="var(--color-teal)" filter="url(#xz-eye-glow)" />
+                    </g>
+                </g>
+            </svg>
+
+            <!-- Cute robotic hands (wiggles when dragged) -->
+            <div class="xz-hand xz-hand-left" style="display: none;">
+                <svg viewBox="0 0 30 30" width="24" height="24">
+                    <path d="M 22 15 L 12 8 C 8 5, 5 9, 9 13 C 5 14, 5 18, 9 17 C 5 19, 7 23, 11 21 L 22 15" fill="#121212" stroke="var(--color-teal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="xz-hand xz-hand-right" style="display: none;">
+                <svg viewBox="0 0 30 30" width="24" height="24">
+                    <path d="M 8 15 L 18 8 C 22 5, 25 9, 21 13 C 25 14, 25 18, 21 17 C 25 19, 23 23, 19 21 L 8 15" fill="#121212" stroke="var(--color-teal)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Interactive Chat Menu -->
+        <div id="xz-companion-menu" class="xz-companion-menu" style="display: none;">
+            <div class="xz-menu-header">
+                <span class="xz-menu-title">XZ Begleiter</span>
+                <button id="xz-menu-close" class="xz-menu-close-btn" aria-label="Menü schließen">✕</button>
+            </div>
+            <div class="xz-menu-content">
+                <!-- Dialog Area -->
+                <div id="xz-dialog-box" class="xz-dialog-box">
+                    <p id="xz-dialog-text">Hey! Ich bin XZ. Hast du eine Frage an mich?</p>
+                </div>
+                <!-- Options Area -->
+                <div id="xz-options-list" class="xz-options-list">
+                    <button class="xz-option-btn" data-question="1">Wer bist du?</button>
+                    <button class="xz-option-btn" data-question="2">Wer ist xzentrexus?</button>
+                    <button class="xz-option-btn" data-question="3">Unterstützen?</button>
+                </div>
+                <button id="xz-back-btn" class="xz-back-btn" style="display: none;">Zurück</button>
+            </div>
+        </div>
+
+        <!-- XZ Dock Orb -->
+        <button id="xz-dock-orb" class="xz-dock-orb xz-dock-orb--free" aria-label="XZ Dock steuern"></button>
+
+        <!-- XZ Sound Orb -->
+        <button id="xz-sound-orb" class="xz-sound-orb xz-sound-orb--on" aria-label="Sound ein/aus">
+            <!-- Sound ON icon -->
+            <svg class="xz-sound-icon xz-sound-icon--on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 5L6 9H3V15H6L11 19V5Z" fill="currentColor"/>
+                <path d="M15.54 8.46C16.48 9.4 17 10.67 17 12C17 13.33 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M19.07 4.93C20.94 6.79 22 9.33 22 12C22 14.67 20.94 17.21 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            <!-- Sound OFF icon -->
+            <svg class="xz-sound-icon xz-sound-icon--off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+                <path d="M11 5L6 9H3V15H6L11 19V5Z" fill="currentColor"/>
+                <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+
     <!-- Custom App JS -->
     <script src="assets/js/app.js"></script>
 </body>

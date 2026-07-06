@@ -38,21 +38,42 @@ document.addEventListener('DOMContentLoaded', () => {
         return `XZ-${datePart}-${randomPart}`;
     }
 
-
     // Initialize Web Audio API and Audio Buffers for Zero-Latency Playback
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     let clickBuffer = null;
     let exitBuffer = null;
 
+    // XZ Companion Audio Buffers
+    let xzClickBuffer = null;
+    let xzDragBuffer = null;
+    let xzCloseBuffer = null;
+    let xzDragSourceNode = null;
+    let xzDragGainNode = null;
+    let xzDragFadeInterval = null;
+    let isSoundEnabled = true; // global sound toggle — controlled by sound orb
+
     // Instantiate fallback HTML5 Audio elements immediately for aggressive browser caching
     const clickAudioFallback = new Audio('assets/music/click.wav');
-    clickAudioFallback.volume = 0.8;
+    clickAudioFallback.volume = 1.0;  // +2 dB
     clickAudioFallback.preload = 'auto';
 
     const exitAudioFallback = new Audio('assets/music/exit.wav');
-    exitAudioFallback.volume = 0.8;
+    exitAudioFallback.volume = 1.0;   // +2 dB
     exitAudioFallback.preload = 'auto';
+
+    // XZ Companion Audio Fallbacks
+    const xzClickAudioFallback = new Audio('assets/music/xz_click.wav');
+    xzClickAudioFallback.volume = 1.0;   // +5.0 dB total (HTML5 max 1.0)
+    xzClickAudioFallback.preload = 'auto';
+
+    const xzDragAudioFallback = new Audio('assets/music/xz_drag.wav');
+    xzDragAudioFallback.volume = 1.0;    // +3.5 dB (HTML5 max 1.0)
+    xzDragAudioFallback.preload = 'auto';
+
+    const xzCloseAudioFallback = new Audio('assets/music/xz_close.wav');
+    xzCloseAudioFallback.volume = 1.0;   // +3.5 dB (HTML5 max 1.0)
+    xzCloseAudioFallback.preload = 'auto';
 
     if (AudioContextClass) {
         audioCtx = new AudioContextClass();
@@ -60,6 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Preload and decode Web Audio API buffers immediately in the background
         preloadSound('assets/music/click.wav').then(buffer => { clickBuffer = buffer; });
         preloadSound('assets/music/exit.wav').then(buffer => { exitBuffer = buffer; });
+        
+        // Preload XZ sounds
+        preloadSound('assets/music/xz_click.wav').then(buffer => { xzClickBuffer = buffer; });
+        preloadSound('assets/music/xz_drag.wav').then(buffer => { xzDragBuffer = buffer; });
+        preloadSound('assets/music/xz_close.wav').then(buffer => { xzCloseBuffer = buffer; });
     }
 
     async function preloadSound(url) {
@@ -79,24 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function playBuffer(buffer, volume = 0.8, isRetry = false) {
+    function playBuffer(buffer, volume = 0.8, isRetry = false, offset = 0) {
         if (!audioCtx || !buffer) return;
         
         // Safety resume for context state (in case it is suspended)
         if (audioCtx.state === 'suspended' && !isRetry) {
             audioCtx.resume().then(() => {
-                playBuffer(buffer, volume, true);
+                playBuffer(buffer, volume, true, offset);
             }).catch(err => {
                 console.error('Failed to resume AudioContext:', err);
-                playBufferDirect(buffer, volume);
+                playBufferDirect(buffer, volume, offset);
             });
             return;
         }
         
-        playBufferDirect(buffer, volume);
+        playBufferDirect(buffer, volume, offset);
     }
 
-    function playBufferDirect(buffer, volume) {
+    function playBufferDirect(buffer, volume, offset = 0) {
         try {
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
@@ -107,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
             source.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
-            source.start(0);
+            source.start(0, offset);
         } catch (e) {
             console.error('playBufferDirect failed:', e);
         }
@@ -115,8 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Use Web Audio API if loaded, fallback to HTML5 fallback otherwise
     function playClickSound() {
+        if (!isSoundEnabled) return;
         if (audioCtx && clickBuffer) {
-            playBuffer(clickBuffer, 0.8);
+            playBuffer(clickBuffer, 1.19);  // +3.5 dB total
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (clickAudioFallback) {
@@ -127,13 +154,167 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function playExitSound() {
+        if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 0.8);
+            playBuffer(exitBuffer, 1.19);   // +3.5 dB total
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (exitAudioFallback) {
                 exitAudioFallback.currentTime = 0;
                 exitAudioFallback.play().catch(e => console.log('Fallback exit play failed:', e));
+            }
+        }
+    }
+
+    // XZ Companion Playback Functions
+    function playXzClickSound() {
+        if (!isSoundEnabled) return;
+        if (audioCtx && xzClickBuffer) {
+            playBuffer(xzClickBuffer, 1.07);  // +5.0 dB total
+        } else {
+            if (xzClickAudioFallback) {
+                xzClickAudioFallback.currentTime = 0;
+                xzClickAudioFallback.play().catch(e => console.log('Fallback xz_click play failed:', e));
+            }
+        }
+    }
+
+    function playXzDragSound() {
+        if (!isSoundEnabled) return;
+        stopXzDragSound(); // Stop any currently playing drag sound first
+
+        if (xzDragFadeInterval) {
+            clearInterval(xzDragFadeInterval);
+            xzDragFadeInterval = null;
+        }
+
+        if (audioCtx && xzDragBuffer) {
+            try {
+                const source = audioCtx.createBufferSource();
+                source.buffer = xzDragBuffer;
+                source.loop = true; // Loop the drag sound continuously while dragging
+                
+                const gainNode = audioCtx.createGain();
+                const currentTime = audioCtx.currentTime;
+                
+                // Start volume at 0 for smooth fade-in
+                gainNode.gain.setValueAtTime(0, currentTime);
+                // Linear ramp to full volume over 1.0 seconds (+5.0 dB total: 0.85 → 1.51)
+                gainNode.gain.linearRampToValueAtTime(1.51, currentTime + 1.0);
+                
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                source.start(0);
+                xzDragSourceNode = source;
+                xzDragGainNode = gainNode;
+            } catch (e) {
+                console.error('playXzDragSound Web Audio failed:', e);
+            }
+        } else {
+            if (xzDragAudioFallback) {
+                xzDragAudioFallback.loop = true; // Loop the fallback element while dragging
+                xzDragAudioFallback.volume = 0;
+                xzDragAudioFallback.currentTime = 0;
+                xzDragAudioFallback.play().then(() => {
+                    // Fade in fallback over 1.0 seconds (1000ms) using 50ms intervals
+                    const totalInSteps = 20; // 1000ms / 50ms
+                    const increment = 1.0 / totalInSteps; // HTML5 max 1.0 (+3.5 dB)
+                    xzDragFadeInterval = setInterval(() => {
+                        if (xzDragAudioFallback.volume < 1.0) {
+                            xzDragAudioFallback.volume = Math.min(1.0, xzDragAudioFallback.volume + increment);
+                        } else {
+                            xzDragAudioFallback.volume = 1.0;
+                            clearInterval(xzDragFadeInterval);
+                            xzDragFadeInterval = null;
+                        }
+                    }, 50);
+                }).catch(e => console.log('Fallback xz_drag play failed:', e));
+            }
+        }
+    }
+
+    function stopXzDragSound() {
+        const fadeOutDuration = 1.0; // 1 second linear fade-out
+
+        if (xzDragFadeInterval) {
+            clearInterval(xzDragFadeInterval);
+            xzDragFadeInterval = null;
+        }
+
+        if (xzDragSourceNode && xzDragGainNode && audioCtx) {
+            try {
+                const currentTime = audioCtx.currentTime;
+                // Cancel any pending ramps (like the fade-in)
+                xzDragGainNode.gain.cancelScheduledValues(currentTime);
+                // Determine starting gain: use current instantaneous value (clamped to max 0.85)
+                let startGain = xzDragGainNode.gain.value;
+                if (startGain > 1.51) startGain = 1.51;  // clamp to new drag max
+                if (startGain < 0) startGain = 0;
+                // Start linear fade-out to 0 over 1 second
+                xzDragGainNode.gain.setValueAtTime(startGain, currentTime);
+                xzDragGainNode.gain.linearRampToValueAtTime(0, currentTime + fadeOutDuration);
+                
+                const sourceToStop = xzDragSourceNode;
+                setTimeout(() => {
+                    try {
+                        sourceToStop.stop(0);
+                    } catch (e) {
+                        // Already stopped
+                    }
+                }, fadeOutDuration * 1000);
+            } catch (e) {
+                console.error('stopXzDragSound Web Audio fade-out failed:', e);
+            }
+            xzDragSourceNode = null;
+            xzDragGainNode = null;
+        }
+
+        if (xzDragAudioFallback) {
+            try {
+                // Disable loop so it stops after fading
+                xzDragAudioFallback.loop = false;
+                // Get current fallback volume as fade-out starting point
+                const startVol = xzDragAudioFallback.volume;
+                // Fade out HTML5 Audio fallback using interval decrements over 1.0 seconds
+                const totalSteps = 20; // 1000ms / 50ms
+                const decrement = startVol / totalSteps;
+                xzDragFadeInterval = setInterval(() => {
+                    if (xzDragAudioFallback.volume > decrement) {
+                        xzDragAudioFallback.volume -= decrement;
+                    } else {
+                        xzDragAudioFallback.pause();
+                        xzDragAudioFallback.volume = 1.0; // Reset to new max for next play
+                        clearInterval(xzDragFadeInterval);
+                        xzDragFadeInterval = null;
+                    }
+                }, 50);
+            } catch (e) {
+                // Ignore fallback stop issues
+            }
+        }
+    }
+
+    function playXzCloseSound() {
+        if (!isSoundEnabled) return;
+        if (audioCtx && xzCloseBuffer) {
+            playBuffer(xzCloseBuffer, 1.51, false, 0.01);  // +5.0 dB total, skip first 10ms (0.01s)
+        } else {
+            if (xzCloseAudioFallback) {
+                xzCloseAudioFallback.currentTime = 0.01; // Skip first 10ms
+                xzCloseAudioFallback.play().catch(e => console.log('Fallback xz_close play failed:', e));
+            }
+        }
+    }
+
+    function playXzOutSound() {
+        if (!isSoundEnabled) return;
+        if (audioCtx && exitBuffer) {
+            playBuffer(exitBuffer, 1.51, false, 0.01);  // +5.0 dB total, skip first 10ms (0.01s)
+        } else {
+            if (exitAudioFallback) {
+                exitAudioFallback.currentTime = 0.01; // Skip first 10ms
+                exitAudioFallback.play().catch(e => console.log('Fallback xz_out play failed:', e));
             }
         }
     }
@@ -169,6 +350,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 exitAudioFallback.volume = origVol;
                 exitAudioFallback.currentTime = 0;
             }).catch(e => console.log('Unlock exit fallback failed:', e));
+        }
+
+        if (xzClickAudioFallback) {
+            const origVol = xzClickAudioFallback.volume;
+            xzClickAudioFallback.volume = 0;
+            xzClickAudioFallback.play().then(() => {
+                xzClickAudioFallback.pause();
+                xzClickAudioFallback.volume = origVol;
+                xzClickAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock xzClick fallback failed:', e));
+        }
+
+        if (xzDragAudioFallback) {
+            const origVol = xzDragAudioFallback.volume;
+            xzDragAudioFallback.volume = 0;
+            xzDragAudioFallback.play().then(() => {
+                xzDragAudioFallback.pause();
+                xzDragAudioFallback.volume = origVol;
+                xzDragAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock xzDrag fallback failed:', e));
+        }
+
+        if (xzCloseAudioFallback) {
+            const origVol = xzCloseAudioFallback.volume;
+            xzCloseAudioFallback.volume = 0;
+            xzCloseAudioFallback.play().then(() => {
+                xzCloseAudioFallback.pause();
+                xzCloseAudioFallback.volume = origVol;
+                xzCloseAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock xzClose fallback failed:', e));
         }
         
         audioUnlocked = true;
@@ -693,6 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let appliedDiscountPercent = 0;
     let appliedDiscountCode = "";
+    let freeShipping = false;
 
     const validPromoCodes = {
         'ANFANG': 0.20,      // 20% discount
@@ -700,10 +912,16 @@ document.addEventListener('DOMContentLoaded', () => {
         'PROMO15': 0.15      // 15% discount
     };
 
+    // Special promo codes (non-percentage)
+    const specialPromoCodes = {
+        'VERSAND100': 'free_shipping'   // removes shipping costs entirely
+    };
+
     function updateCheckoutTotal() {
         if (!checkoutSummaryTotalVal) return;
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        const shipping = subtotal > 0 ? 1.99 : 0.00;
+        const shippingBase = subtotal > 0 ? 1.99 : 0.00;
+        const shipping = freeShipping ? 0.00 : shippingBase;
         const discountAmount = subtotal * appliedDiscountPercent;
         const total = Math.max(0, subtotal - discountAmount) + shipping;
 
@@ -724,12 +942,21 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        summaryHtml += `
-            <li class="checkout-shipping-summary">
-                <span>Versandkosten (gepolstert)</span>
-                <span>${shipping.toFixed(2)} €</span>
-            </li>
-        `;
+        if (freeShipping) {
+            summaryHtml += `
+                <li class="checkout-shipping-summary" style="color: #00d4d4; font-weight: 600;">
+                    <span>Versandkosten (gepolstert)</span>
+                    <span><s style="color: #888; font-weight: 400;">${shippingBase.toFixed(2)} €</s> 0,00 € ✓</span>
+                </li>
+            `;
+        } else {
+            summaryHtml += `
+                <li class="checkout-shipping-summary">
+                    <span>Versandkosten (gepolstert)</span>
+                    <span>${shippingBase.toFixed(2)} €</span>
+                </li>
+            `;
+        }
 
         if (checkoutSummaryList) {
             checkoutSummaryList.innerHTML = summaryHtml;
@@ -876,6 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             appliedDiscountPercent = 0;
             appliedDiscountCode = "";
+            freeShipping = false;
             
             updateCheckoutTotal();
             checkoutModal.classList.add('open');
@@ -891,7 +1119,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (validPromoCodes.hasOwnProperty(enteredCode)) {
+            if (specialPromoCodes.hasOwnProperty(enteredCode)) {
+                const action = specialPromoCodes[enteredCode];
+                if (action === 'free_shipping') {
+                    freeShipping = true;
+                    appliedDiscountCode = appliedDiscountCode ? appliedDiscountCode + ' + ' + enteredCode : enteredCode;
+                    discountFeedback.textContent = `Code '${enteredCode}' eingelöst – Versandkosten entfallen!`;
+                    discountFeedback.className = 'discount-feedback success';
+                    updateCheckoutTotal();
+                }
+            } else if (validPromoCodes.hasOwnProperty(enteredCode)) {
                 appliedDiscountPercent = validPromoCodes[enteredCode];
                 appliedDiscountCode = enteredCode;
                 discountFeedback.textContent = `Rabattcode '${enteredCode}' (${appliedDiscountPercent * 100}%) erfolgreich angewendet!`;
@@ -934,6 +1171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         checkoutForm.reset();
                         appliedDiscountPercent = 0;
                         appliedDiscountCode = "";
+                        freeShipping = false;
                         if (discountCodeInput) discountCodeInput.value = '';
                         if (discountFeedback) {
                             discountFeedback.textContent = '';
@@ -984,7 +1222,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Build order items summary text
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const shipping = subtotal > 0 ? 1.99 : 0.00;
+            const shippingBase = subtotal > 0 ? 1.99 : 0.00;
+            const shipping = freeShipping ? 0.00 : shippingBase;
             const discountAmount = subtotal * appliedDiscountPercent;
             const total = Math.max(0, subtotal - discountAmount) + shipping;
 
@@ -992,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `${item.qty}x ${item.name} — ${(item.price * item.qty).toFixed(2)} €`
             ).join('\n') +
                 (appliedDiscountPercent > 0 ? `\nRabatt (${appliedDiscountCode}): -${discountAmount.toFixed(2)} €` : '') +
-                `\nVersand: ${shipping.toFixed(2)} €`;
+                (freeShipping ? `\nVersand: 0,00 € (Code: VERSAND100 – kostenloser Versand)` : `\nVersand: ${shippingBase.toFixed(2)} €`);
 
             const totalPrice = `${total.toFixed(2)} €`;
 
@@ -1029,6 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkoutForm.reset();
                     appliedDiscountPercent = 0;
                     appliedDiscountCode = "";
+                    freeShipping = false;
                     if (discountCodeInput) discountCodeInput.value = '';
                     if (discountFeedback) {
                         discountFeedback.textContent = '';
@@ -1559,6 +1799,11 @@ document.addEventListener('DOMContentLoaded', () => {
        10. GLOBAL CLICK & EXIT SOUND EFFECTS - EVENT LISTENER
        ========================================================================== */
     document.addEventListener('click', (e) => {
+        // Exclude XZ companion and its menu completely from global click sounds
+        if (e.target.closest('#xz-companion-root') || e.target.closest('.xz-companion-menu')) {
+            return;
+        }
+
         // Exclude the entire "Frühere Veröffentlichungen" container/section completely (including any future elements inside it)
         if (e.target.closest('#music') || e.target.closest('.music-section')) {
             return;
@@ -1568,7 +1813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isExitElement = e.target.closest('#brand-logo, .modal-close, .close-cart-btn, .modal-overlay, .cart-panel-overlay');
         if (isExitElement) {
             playExitSound();
-            return; // Exit early, do not play the standard click sound
+            return;
         }
 
         // Otherwise check if it's a standard interactive element
@@ -1577,4 +1822,1086 @@ document.addEventListener('DOMContentLoaded', () => {
             playClickSound();
         }
     });
+
+    // ==========================================================================
+    // 16. INTERACTIVE COMPANION "XZ"
+    // ==========================================================================
+    (function initXZCompanion() {
+        const root = document.getElementById('xz-companion-root');
+        const body = document.getElementById('xz-companion-body');
+        const menu = document.getElementById('xz-companion-menu');
+        const menuClose = document.getElementById('xz-menu-close');
+        const dialogText = document.getElementById('xz-dialog-text');
+        const optionsList = document.getElementById('xz-options-list');
+        const backBtn = document.getElementById('xz-back-btn');
+        const droneSvg = body ? body.querySelector('.xz-drone-svg') : null;
+
+        const assetBrain = body ? body.querySelector('.xz-asset-brain') : null;
+        const assetCar = body ? body.querySelector('.xz-asset-car') : null;
+        const eyesGroup = body ? body.querySelector('.xz-eyes-group') : null;
+
+        const eyesNormal = body ? body.querySelector('.xz-eyes-normal') : null;
+        const eyesAngry = body ? body.querySelector('.xz-eyes-angry') : null;
+        const handsLeft = body ? body.querySelector('.xz-hand-left') : null;
+        const handsRight = body ? body.querySelector('.xz-hand-right') : null;
+
+        if (!root || !body || !menu) return;
+
+        // Position & Movement variables
+        let x = window.innerWidth - 80;
+        let y = window.innerHeight - 150;
+        let vx = 0;
+        let vy = 0;
+        let targetX = x;
+        let targetY = y;
+        let rotation = 0;
+
+        // Drag and Drop state
+        let isDragging = false;
+        let hasDragged = false;
+        let dragOffsetRotation = 0;
+
+        // Mouse Gaze Tracking state
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Settings
+        const SPEED_LIMIT = 1.4;
+        const STEERING_FORCE = 0.025;
+        const AVOID_FORCE = 0.75;
+        const AVOID_RADIUS = 95;
+
+        let isMenuOpen = false;
+        let isAnimating = false;
+        let currentAnimation = 'IDLE'; // IDLE, BRAIN_RIDE, CAR_RIDE, SINGING
+        let animationTimer = null;
+        let customAnimEndTimer = null;
+        let isFreeFlightActive = true;
+        let isXZAtDock = false;
+        let isDockingInProgress = false; // XZ is flying toward dock, not yet arrived
+        let prevScrollX = window.scrollX;  // used for scroll-delta compensation during docking
+        let prevScrollY = window.scrollY;
+
+        // Cabrio Spot-Drive Bumping Physics
+        let carBumpY = 0;
+        let carBumpVy = 0;
+        let riderBounceY = 5;
+
+        // Bounding boxes cache of elements to avoid (in document-absolute coordinates)
+        let avoidRects = [];
+
+        function updateAvoidRects() {
+            avoidRects = [];
+            const selectors = [
+                'header',
+                '.btn',
+                'button:not(.xz-menu-close-btn):not(.xz-option-btn):not(.xz-back-btn)',
+                'input',
+                'textarea',
+                'select',
+                '.add-to-cart-btn',
+                '.qty-btn',
+                '.cart-btn',
+                '.mobile-menu-btn',
+                '.social-icon',
+                '.track-player',
+                '.play-btn',
+                '.modal-content',
+                '.cart-panel.open'
+            ];
+
+            selectors.forEach(sel => {
+                const elms = document.querySelectorAll(sel);
+                elms.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        const left = rect.left + window.scrollX;
+                        const right = rect.right + window.scrollX;
+                        const top = rect.top + window.scrollY;
+                        const bottom = rect.bottom + window.scrollY;
+                        avoidRects.push({
+                            left: left,
+                            right: right,
+                            top: top,
+                            bottom: bottom,
+                            cx: left + rect.width / 2,
+                            cy: top + rect.height / 2
+                        });
+                    }
+                });
+            });
+        }
+
+        setInterval(updateAvoidRects, 1000);
+        window.addEventListener('resize', updateAvoidRects);
+        window.addEventListener('scroll', updateAvoidRects);
+
+        const sectors = [
+            { name: 'top-left', minX: 60, maxX: 0.35, minY: 100, maxY: 0.35 },
+            { name: 'top-right', minX: 0.65, maxX: 0.9, minY: 100, maxY: 0.35 },
+            { name: 'bottom-left', minX: 60, maxX: 0.35, minY: 0.65, maxY: 0.82 },
+            { name: 'bottom-right', minX: 0.65, maxX: 0.9, minY: 0.65, maxY: 0.82 },
+            { name: 'center', minX: 0.35, maxX: 0.65, minY: 0.35, maxY: 0.65 }
+        ];
+        let currentSectorIndex = 4;
+        let isWaitingForNextTarget = false;
+
+        function getSectorBounds(sector) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const xMin = sector.minX < 1 ? sector.minX * w : sector.minX;
+            const xMax = sector.maxX < 1 ? sector.maxX * w : sector.maxX;
+            const yMin = sector.minY < 1 ? sector.minY * h : sector.minY;
+            const yMax = sector.maxY < 1 ? sector.maxY * h : sector.maxY;
+            return { xMin, xMax, yMin, yMax };
+        }
+
+        function pickNewTarget() {
+            if (!isFreeFlightActive || isMenuOpen || currentAnimation === 'CAR_RIDE' || isDragging) return;
+
+            let attempts = 0;
+            let foundSafeTarget = false;
+
+            let nextSectorIndex;
+            do {
+                nextSectorIndex = Math.floor(Math.random() * sectors.length);
+            } while (nextSectorIndex === currentSectorIndex && sectors.length > 1);
+            currentSectorIndex = nextSectorIndex;
+            
+            const sector = sectors[currentSectorIndex];
+            const bounds = getSectorBounds(sector);
+
+            while (attempts < 20 && !foundSafeTarget) {
+                const tx = bounds.xMin + Math.random() * (bounds.xMax - bounds.xMin) + window.scrollX;
+                const ty = bounds.yMin + Math.random() * (bounds.yMax - bounds.yMin) + window.scrollY;
+
+                let isSafe = true;
+                for (let rect of avoidRects) {
+                    if (tx > rect.left - 50 && tx < rect.right + 50 &&
+                        ty > rect.top - 50 && ty < rect.bottom + 50) {
+                        isSafe = false;
+                        break;
+                    }
+                }
+
+                if (isSafe) {
+                    targetX = tx;
+                    targetY = ty;
+                    foundSafeTarget = true;
+                }
+                attempts++;
+            }
+
+            if (!foundSafeTarget) {
+                targetX = window.innerWidth - 80 + window.scrollX;
+                targetY = window.innerHeight - 150 + window.scrollY;
+            }
+        }
+
+        // Strict 15 Seconds Wander Interval Timer (non-active during ride animations/drag)
+        setInterval(() => {
+            if (!isDragging && !isMenuOpen && currentAnimation === 'IDLE' && !isWaitingForNextTarget) {
+                pickNewTarget();
+            }
+        }, 15000);
+
+        // Drag and Drop Event Listeners (PC & Mobile Touch)
+        function startDrag(clientX, clientY) {
+            isDragging = true;
+            hasDragged = false;
+            body.classList.add('state-dragging');
+            closeMenu(true); // close silently so close sound doesn't conflict
+
+            if (eyesNormal) eyesNormal.style.display = 'none';
+            if (eyesAngry) eyesAngry.style.display = 'block';
+            if (handsLeft) handsLeft.style.display = 'block';
+            if (handsRight) handsRight.style.display = 'block';
+        }
+
+        function handleDragMove(clientX, clientY) {
+            if (!isDragging) return;
+
+            // Only trigger the drag sound once when they actually start moving XZ
+            if (!hasDragged) {
+                playXzDragSound();
+            }
+
+            mouseX = clientX;
+            mouseY = clientY;
+            hasDragged = true;
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            body.classList.remove('state-dragging');
+            stopXzDragSound(); // Stop the drag sound immediately on release
+
+            if (eyesNormal) eyesNormal.style.display = 'block';
+            if (eyesAngry) eyesAngry.style.display = 'none';
+            if (handsLeft) handsLeft.style.display = 'none';
+            if (handsRight) handsRight.style.display = 'none';
+
+            isXZAtDock = false; // XZ has been manually dragged, so he is no longer at the dock
+
+            // pick target coordinates near release point to settle down (relative to viewport scroll)
+            const minX = window.scrollX + 50;
+            const maxX = window.scrollX + window.innerWidth - 50;
+            const minY = window.scrollY + 100;
+            const maxY = window.scrollY + window.innerHeight - 100;
+            targetX = Math.max(minX, Math.min(maxX, x));
+            targetY = Math.max(minY, Math.min(maxY, y));
+        }
+
+        body.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // Left mouse click only
+            e.stopPropagation();
+            startDrag(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                handleDragMove(e.clientX, e.clientY);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) endDrag();
+        });
+
+        // Touch support
+        body.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            if (e.touches && e.touches.length > 0) {
+                const touch = e.touches[0];
+                startDrag(touch.clientX, touch.clientY);
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                e.preventDefault(); // Stop mobile page scroll while dragging XZ
+                if (e.touches && e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    handleDragMove(touch.clientX, touch.clientY);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            if (isDragging) endDrag();
+        });
+
+        // Steer towards target and avoid obstacles
+        function updateMovement() {
+            // ── Dock mode: pin absolutely to viewport corner, no physics lag ──────
+            // Use document.documentElement.clientWidth to exclude scrollbar width,
+            // preventing XZ from drifting behind the scrollbar on Windows.
+            if (isXZAtDock && !isDragging) {
+                const cw = document.documentElement.clientWidth;
+                const ch = document.documentElement.clientHeight;
+                x = window.scrollX + cw  - 55;
+                y = window.scrollY + ch  - 95;
+                vx = 0; vy = 0;
+                prevScrollX = window.scrollX;   // keep in sync
+                prevScrollY = window.scrollY;
+                const hoverY = Math.cos(Date.now() / 450) * 1.5;
+                body.style.transform = `translate3d(${x}px, ${y + hoverY}px, 0) rotate(0deg)`;
+                requestAnimationFrame(updateMovement);
+                return;
+            }
+
+            // ── Scroll compensation: keep XZ viewport-relative ───────────────────
+            // Shift XZ's absolute document coords by the scroll delta each frame.
+            // This makes him move with the viewport (companion behaviour), without
+            // hard boundary clamping which would cause jarring pulls when scrolling.
+            // Applied in all states except drag (where the user controls position)
+            // and docked (which has its own pinning logic above).
+            if (!isDragging) {
+                const sdx = window.scrollX - prevScrollX;
+                const sdy = window.scrollY - prevScrollY;
+                if (sdx !== 0 || sdy !== 0) {
+                    x += sdx;
+                    y += sdy;
+                    targetX += sdx;
+                    targetY += sdy;
+                }
+            }
+            prevScrollX = window.scrollX;
+            prevScrollY = window.scrollY;
+
+            // Sichern vor NaN-Fehlern (Bulletproof physics reset)
+            if (isNaN(x) || isNaN(y) || isNaN(vx) || isNaN(vy) || isNaN(targetX) || isNaN(targetY)) {
+                x = window.innerWidth - 80 + window.scrollX;
+                y = window.innerHeight - 150 + window.scrollY;
+                vx = 0;
+                vy = 0;
+                targetX = x;
+                targetY = y;
+            }
+
+            if (isNaN(mouseX) || isNaN(mouseY)) {
+                mouseX = window.innerWidth / 2;
+                mouseY = window.innerHeight / 2;
+            }
+
+            // Viewport boundaries in document coordinates
+            // Use clientWidth and clientHeight to exclude scrollbar widths on desktop
+            const cw = document.documentElement.clientWidth;
+            const ch = document.documentElement.clientHeight;
+            const borderPad = 40;
+            const minX = window.scrollX + borderPad;
+            const maxX = window.scrollX + cw - borderPad;
+            const minY = window.scrollY + borderPad + 40;
+            const maxY = window.scrollY + ch - borderPad;
+
+            // Flight mode clamping / docking-flight target tracking
+            if (!isFreeFlightActive) {
+                if (isDockingInProgress) {
+                    const cw = document.documentElement.clientWidth;
+                    const ch = document.documentElement.clientHeight;
+                    const dkX = window.scrollX + cw - 55;
+                    const dkY = window.scrollY + ch - 95;
+                    targetX = dkX;
+                    targetY = dkY;
+
+                    // Arrival detection — snap into dock once close enough
+                    const dockDist = Math.hypot(x - dkX, y - dkY);
+                    if (dockDist < 38) {
+                        isDockingInProgress = false;
+                        isXZAtDock = true;
+                        const orb = document.getElementById('xz-dock-orb');
+                        if (orb) {
+                            orb.classList.remove('xz-dock-orb--free', 'xz-dock-orb--docking');
+                            orb.classList.add('xz-dock-orb--docked');
+                        }
+                    }
+                } else if (!isXZAtDock) {
+                    // Parked at a custom (dragged) position — clamp to viewport
+                    if (targetX < minX) targetX = minX;
+                    if (targetX > maxX) targetX = maxX;
+                    if (targetY < minY) targetY = minY;
+                    if (targetY > maxY) targetY = maxY;
+                }
+                // isXZAtDock case is handled by the early-return above
+            }
+
+            // Calculate speed for Motion Blur
+            const speed = Math.sqrt(vx * vx + vy * vy);
+            const blurVal = Math.min(2.5, speed * 0.6);
+
+            // Realistic Perspective Shadow Calculation
+            // Light source sits at center screen (window.innerWidth / 2)
+            const screenCx = window.innerWidth / 2;
+            const screenCy = window.innerHeight / 2;
+            const shadowDx = (x - (screenCx + window.scrollX)) * 0.08;
+            const shadowDy = (y - (screenCy + window.scrollY)) * 0.08 + 12; // light elevated
+            
+            // Hover bobbing factor affects shadow blur & opacity
+            const bobFactor = Math.sin(Date.now() / 450);
+            const shadowBlur = 10 + bobFactor * 2;
+            const shadowOpacity = 0.35 - bobFactor * 0.05;
+
+            // Apply filter to body
+            body.style.filter = `drop-shadow(${shadowDx}px ${shadowDy}px ${shadowBlur}px rgba(0,0,0,${shadowOpacity})) blur(${blurVal}px)`;
+
+            // Gaze tracking processing (runs during special animations)
+            if (eyesGroup && !isDragging) {
+                if ((currentAnimation === 'BRAIN_RIDE' || currentAnimation === 'CAR_RIDE') && !isMenuOpen) {
+                    const dx = mouseX + window.scrollX - x;
+                    const dy = mouseY + window.scrollY - y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    let moveX = 0;
+                    let moveY = 0;
+                    if (dist > 5) {
+                        const limit = 3.5;
+                        moveX = (dx / dist) * limit;
+                        moveY = (dy / dist) * limit;
+                    }
+                    eyesGroup.style.transform = `translate3d(${moveX}px, ${moveY}px, 0)`;
+                } else {
+                    eyesGroup.style.transform = 'translate3d(0, 0, 0)';
+                }
+            }
+
+            // --- DRAGGING STATE MECHANICS ---
+            if (isDragging) {
+                // Spring-LERP Dragging with slight resistance
+                const prevX = x;
+                const prevY = y;
+                
+                const pageMouseX = mouseX + window.scrollX;
+                const pageMouseY = mouseY + window.scrollY;
+
+                x += (pageMouseX - x) * 0.14;
+                y += (pageMouseY - y) * 0.14;
+                
+                // Constrain drag within screen limits
+                if (x < minX) x = minX;
+                if (x > maxX) x = maxX;
+                if (y < minY) y = minY;
+                if (y > maxY) y = maxY;
+
+                // Set inertia velocity on throw release
+                vx = (x - prevX) * 0.8;
+                vy = (y - prevY) * 0.8;
+
+                // Widerwilliges Querstellen: tilt opposite or lag behind movement
+                const dragVx = pageMouseX - x;
+                const targetRot = Math.max(-35, Math.min(35, dragVx * 0.7));
+                rotation += (targetRot - rotation) * 0.15;
+
+                // Animation spot-offsets during drag
+                let animYOffset = 0;
+                let animXOffset = 0;
+                let animRotOffset = 0;
+
+                if (currentAnimation === 'CAR_RIDE') {
+                    const suspension = Math.sin(Date.now() / 250) * 1.5;
+                    const vibration = Math.sin(Date.now() / 45) * 0.5;
+                    animYOffset = suspension + vibration + carBumpY;
+                    
+                    if (droneSvg) {
+                        riderBounceY += ((carBumpY * 0.65 + 5) - riderBounceY) * 0.22;
+                        droneSvg.style.transform = `translate3d(0, ${riderBounceY}px, 0)`;
+                    }
+                } else if (currentAnimation === 'BRAIN_RIDE') {
+                    const rideWaveY = Math.sin(Date.now() / 200) * 15;
+                    const rideWaveX = Math.cos(Date.now() / 400) * 4;
+                    const rideTilt = Math.cos(Date.now() / 200) * 6;
+                    animYOffset = rideWaveY;
+                    animXOffset = rideWaveX;
+                    animRotOffset = rideTilt;
+
+                    if (droneSvg) {
+                        const riderY = Math.sin(Date.now() / 100) * 6 - 8;
+                        const riderRot = Math.cos(Date.now() / 100) * 5;
+                        droneSvg.style.transform = `translate3d(0, ${riderY}px, 0) rotate(${riderRot}deg)`;
+                    }
+
+                    if (assetBrain) {
+                        const bScaleY = 1 + Math.sin(Date.now() / 100) * 0.05;
+                        const bScaleX = 1 - Math.sin(Date.now() / 100) * 0.03;
+                        assetBrain.style.transform = `scale(${bScaleX}, ${bScaleY})`;
+                    }
+                }
+
+                body.style.transform = `translate3d(${x + animXOffset}px, ${y + animYOffset}px, 0) rotate(${rotation + animRotOffset}deg)`;
+                
+                requestAnimationFrame(updateMovement);
+                return;
+            }
+
+            if (isMenuOpen) {
+                vx *= 0.85;
+                vy *= 0.85;
+                x += vx;
+                y += vy;
+
+                body.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                requestAnimationFrame(updateMovement);
+                return;
+            }
+
+            // --- ANIMATION TYPE: CAR RIDE (Spot-Drive with Obstacle Bumps) ---
+            if (currentAnimation === 'CAR_RIDE') {
+                targetX = x;
+                targetY = y;
+
+                // Decelerate and settle
+                let desiredVx = targetX - x;
+                let desiredVy = targetY - y;
+                const distToTarget = Math.sqrt(desiredVx * desiredVx + desiredVy * desiredVy);
+
+                if (distToTarget > 0) {
+                    desiredVx = (desiredVx / distToTarget) * (SPEED_LIMIT * 1.5);
+                    desiredVy = (desiredVy / distToTarget) * (SPEED_LIMIT * 1.5);
+                }
+                vx += (desiredVx - vx) * 0.05;
+                vy += (desiredVy - vy) * 0.05;
+
+                // CAR_RIDE is stationary — no boundary push needed
+
+                x += vx;
+                y += vy;
+
+                // Cabrio Engine Vibration + Suspension Bounce
+                const suspension = Math.sin(Date.now() / 250) * 1.5;
+                const vibration = Math.sin(Date.now() / 45) * 0.5;
+
+                // Random Obstacle Bumping (spring physics)
+                if (Math.random() < 0.008 && carBumpY === 0) {
+                    carBumpVy = -5.5 - Math.random() * 4; // jolt up
+                }
+
+                if (carBumpY !== 0 || carBumpVy !== 0) {
+                    carBumpVy += 0.75; // gravity force
+                    carBumpY += carBumpVy;
+                    if (carBumpY > 0) {
+                        carBumpY = 0; // hit baseline
+                        carBumpVy = 0;
+                    }
+                }
+
+                body.style.transform = `translate3d(${x}px, ${y + suspension + vibration + carBumpY}px, 0) rotate(0deg)`;
+
+                // Springy rider reaction inside the cabrio cockpit (XZ bounces with lag)
+                if (droneSvg) {
+                    riderBounceY += ((carBumpY * 0.65 + 5) - riderBounceY) * 0.22;
+                    droneSvg.style.transform = `translate3d(0, ${riderBounceY}px, 0)`;
+                }
+
+                requestAnimationFrame(updateMovement);
+                return;
+            }
+
+            // --- ANIMATION TYPE: BRAIN RIDE (Horse-riding simulation in spot) ---
+            if (currentAnimation === 'BRAIN_RIDE') {
+                targetX = x;
+                targetY = y;
+
+                let desiredVx = targetX - x;
+                let desiredVy = targetY - y;
+                const distToTarget = Math.sqrt(desiredVx * desiredVx + desiredVy * desiredVy);
+
+                if (distToTarget > 0) {
+                    desiredVx = (desiredVx / distToTarget) * (SPEED_LIMIT * 1.5);
+                    desiredVy = (desiredVy / distToTarget) * (SPEED_LIMIT * 1.5);
+                }
+
+                vx += (desiredVx - vx) * 0.05;
+                vy += (desiredVy - vy) * 0.05;
+
+                // BRAIN_RIDE is stationary — no boundary push needed
+
+                x += vx;
+                y += vy;
+
+                // Bouncy flight trajectory like a riding horse in spot
+                const rideWaveY = Math.sin(Date.now() / 200) * 15;
+                const rideWaveX = Math.cos(Date.now() / 400) * 4;
+                const rideTilt = Math.cos(Date.now() / 200) * 6; // roll rotation
+
+                body.style.transform = `translate3d(${x + rideWaveX}px, ${y + rideWaveY}px, 0) rotate(${rideTilt}deg)`;
+
+                // Springy rider bouncing relative to the brain
+                if (droneSvg) {
+                    const riderY = Math.sin(Date.now() / 100) * 6 - 8;
+                    const riderRot = Math.cos(Date.now() / 100) * 5;
+                    droneSvg.style.transform = `translate3d(0, ${riderY}px, 0) rotate(${riderRot}deg)`;
+                }
+
+                // Brain squash and stretch pulsing
+                if (assetBrain) {
+                    const bScaleY = 1 + Math.sin(Date.now() / 100) * 0.05;
+                    const bScaleX = 1 - Math.sin(Date.now() / 100) * 0.03;
+                    assetBrain.style.transform = `scale(${bScaleX}, ${bScaleY})`;
+                }
+
+                requestAnimationFrame(updateMovement);
+                return;
+            }
+
+            // --- STANDARD IDLE FLIGHT MODE ---
+            let desiredVx = targetX - x;
+            let desiredVy = targetY - y;
+            const distToTarget = Math.sqrt(desiredVx * desiredVx + desiredVy * desiredVy);
+
+            if (distToTarget > 0) {
+                const speed = distToTarget < 120 ? SPEED_LIMIT * (distToTarget / 120) : SPEED_LIMIT;
+                desiredVx = (desiredVx / distToTarget) * Math.max(0.18, speed);
+                desiredVy = (desiredVy / distToTarget) * Math.max(0.18, speed);
+            }
+
+            let steerX = desiredVx - vx;
+            let steerY = desiredVy - vy;
+
+            vx += steerX * STEERING_FORCE;
+            vy += steerY * STEERING_FORCE;
+
+            for (let rect of avoidRects) {
+                const dx = x - rect.cx;
+                const dy = y - rect.cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < AVOID_RADIUS && dist > 0) {
+                    const force = (1 - dist / AVOID_RADIUS) * AVOID_FORCE;
+                    vx += (dx / dist) * force;
+                    vy += (dy / dist) * force;
+                }
+            }
+
+            // No hard viewport boundary clamp in free flight —
+            // XZ lives in document space and is not forced back into view on scroll.
+            // pickNewTarget() already selects destinations within the current viewport,
+            // so XZ naturally stays in visited areas without being artificially dragged.
+
+            const speedNorm = Math.sqrt(vx * vx + vy * vy);
+            if (speedNorm > SPEED_LIMIT) {
+                vx = (vx / speedNorm) * SPEED_LIMIT;
+                vy = (vy / speedNorm) * SPEED_LIMIT;
+            }
+
+            x += vx;
+            y += vy;
+
+            const targetRot = vx * 12.5;
+            rotation += (targetRot - rotation) * 0.08;
+
+            const hoverX = Math.sin(Date.now() / 600) * 3.5;
+            const hoverY = Math.cos(Date.now() / 450) * 2.5;
+
+            body.style.transform = `translate3d(${x + hoverX}px, ${y + hoverY}px, 0) rotate(${rotation}deg)`;
+
+            if (distToTarget < 25 && !isWaitingForNextTarget) {
+                isWaitingForNextTarget = true;
+                setTimeout(() => {
+                    pickNewTarget();
+                    isWaitingForNextTarget = false;
+                }, 1000 + Math.random() * 1200);
+            }
+
+            requestAnimationFrame(updateMovement);
+        }
+
+        // Animation System
+        function startAnimationTimer() {
+            if (animationTimer) clearTimeout(animationTimer);
+            animationTimer = setTimeout(() => {
+                triggerRandomAnimation();
+            }, 15000);
+        }
+
+        function triggerRandomAnimation() {
+            if (isMenuOpen || isAnimating || isDragging || !isFreeFlightActive) {
+                startAnimationTimer();
+                return;
+            }
+
+            isAnimating = true;
+            const animations = ['BRAIN', 'CAR', 'SINGING'];
+            const chosen = animations[Math.floor(Math.random() * animations.length)];
+
+            if (chosen === 'BRAIN') {
+                runBrainAnimation();
+            } else if (chosen === 'CAR') {
+                runCarAnimation();
+            } else if (chosen === 'SINGING') {
+                runSingingAnimation();
+            }
+        }
+
+        function runBrainAnimation() {
+            currentAnimation = 'BRAIN_RIDE';
+            if (assetBrain) assetBrain.style.display = 'block';
+            
+            // Stay in place at current coordinates
+            targetX = x;
+            targetY = y;
+            vx = 0;
+            vy = 0;
+
+            customAnimEndTimer = setTimeout(() => {
+                if (assetBrain) assetBrain.style.display = 'none';
+                if (droneSvg) droneSvg.style.transform = '';
+                currentAnimation = 'IDLE';
+                isAnimating = false;
+                startAnimationTimer();
+            }, 10000);
+        }
+
+        function runCarAnimation() {
+            currentAnimation = 'CAR_RIDE';
+            body.classList.add('state-car-ride');
+            if (assetCar) assetCar.style.display = 'block';
+
+            // Stay in place at current coordinates
+            targetX = x;
+            targetY = y;
+            vx = 0;
+            vy = 0;
+            carBumpY = 0;
+            carBumpVy = 0;
+            riderBounceY = 5;
+
+            customAnimEndTimer = setTimeout(() => {
+                body.classList.remove('state-car-ride');
+                if (assetCar) assetCar.style.display = 'none';
+                if (droneSvg) droneSvg.style.transform = '';
+                currentAnimation = 'IDLE';
+                isAnimating = false;
+                startAnimationTimer();
+            }, 10000);
+        }
+
+        let singingNoteInterval = null;
+
+        function runSingingAnimation() {
+            currentAnimation = 'SINGING';
+            const notes = ['🎵', '🎶', '♩', '♪', '♫', '♬'];
+            let noteCount = 0;
+
+            singingNoteInterval = setInterval(() => {
+                if (noteCount > 15 || currentAnimation !== 'SINGING' || isDragging) {
+                    clearInterval(singingNoteInterval);
+                    return;
+                }
+
+                const note = document.createElement('div');
+                note.className = 'xz-music-note';
+                note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                
+                // Position relative to XZ body (since notes are appended to body)
+                note.style.left = `14px`;
+                note.style.top = `10px`;
+
+                const xDrift = (Math.random() - 0.5) * 60;
+                const rotDrift = (Math.random() - 0.5) * 50;
+                note.style.setProperty('--x-drift', `${xDrift}px`);
+                note.style.setProperty('--rot-drift', `${rotDrift}deg`);
+
+                body.appendChild(note);
+                setTimeout(() => note.remove(), 2000);
+                noteCount++;
+            }, 600);
+
+            if (droneSvg) droneSvg.style.animation = 'xzDroneHover 0.4s ease-in-out infinite alternate';
+
+            customAnimEndTimer = setTimeout(() => {
+                clearInterval(singingNoteInterval);
+                if (droneSvg) {
+                    droneSvg.style.animation = '';
+                    droneSvg.style.transform = '';
+                }
+                currentAnimation = 'IDLE';
+                isAnimating = false;
+                startAnimationTimer();
+            }, 10000);
+        }
+
+        // Menu & Dialog Logic
+        const dialogData = {
+            greet: "Hey! Ich bin XZ. Hast du eine Frage an mich?",
+            1: "Ich bin XZ – dein kleiner Begleiter auf der Website von xzentrexus.",
+            2: "xzentrexus heißt mit bürgerlichem Namen Leandro. In den vergangenen Monaten und Jahren hat er sich auf Plattformen wie TikTok und YouTube eine Community aufgebaut. Sein aktueller Schwerpunkt liegt auf der Musik. Sein neuestes Album trägt den Titel 'Anfang'.",
+            3: "Jeglicher Support auf den verlinkten Social-Media-Kanälen – egal ob Like, Kommentar oder Follow – bedeutet uns unglaublich viel. Auch mit dem Kauf unserer Produkte unterstützt du xzentrexus's Projekte direkt. Vielen Dank für deine Unterstützung! ❤️"
+        };
+
+        let typewriterTimeout = null;
+
+        function typeText(text, callback) {
+            if (typewriterTimeout) clearTimeout(typewriterTimeout);
+            dialogText.textContent = '';
+            let index = 0;
+
+            function nextChar() {
+                if (index < text.length) {
+                    dialogText.textContent += text.charAt(index);
+                    index++;
+                    typewriterTimeout = setTimeout(nextChar, 20);
+                } else if (callback) {
+                    callback();
+                }
+            }
+            nextChar();
+        }
+
+        function positionMenu() {
+            const menuWidth = 290;
+            const menuHeight = 240;
+            
+            // Current viewport scroll-aware boundaries
+            const minScrollX = window.scrollX + 15;
+            const maxScrollX = window.scrollX + window.innerWidth - menuWidth - 15;
+            const minScrollY = window.scrollY + 70;
+
+            // Always position Below XZ: 40px XZ radius + 20px gap = 60px
+            let menuLeft = x - menuWidth / 2;
+            let menuTop = y + 60;
+
+            // Clamp horizontally to stay inside viewport
+            if (menuLeft < minScrollX) menuLeft = minScrollX;
+            if (menuLeft > maxScrollX) menuLeft = maxScrollX;
+
+            // Clamp top edge to not overlap header
+            if (menuTop < minScrollY) menuTop = minScrollY;
+
+            menu.style.left = `${menuLeft}px`;
+            menu.style.top = `${menuTop}px`;
+        }
+
+        function openMenu() {
+            isMenuOpen = true;
+            body.classList.add('state-listening');
+            menu.style.display = 'block';
+            positionMenu();
+            setTimeout(() => menu.classList.add('open'), 10);
+            
+            typeText(dialogData.greet);
+            optionsList.style.display = 'flex';
+            backBtn.style.display = 'none';
+            playXzClickSound();
+        }
+
+        function closeMenu(silent = false, useCloseSound = false) {
+            if (!silent) {
+                if (useCloseSound) {
+                    playXzCloseSound(); // plays xz_close.wav
+                } else {
+                    playXzOutSound(); // plays exit.wav
+                }
+            }
+            isMenuOpen = false;
+            body.classList.remove('state-listening');
+            menu.classList.remove('open');
+            if (typewriterTimeout) clearTimeout(typewriterTimeout);
+            setTimeout(() => {
+                menu.style.display = 'none';
+            }, 250);
+        }
+
+        body.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Prevent toggling menu if dragging occurred
+            if (isDragging || hasDragged) {
+                hasDragged = false;
+                return;
+            }
+
+            if (isMenuOpen) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+
+        menuClose.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closeMenu(false, true);
+        });
+        menuClose.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            closeMenu(false, true);
+        }, { passive: false });
+        menuClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+        });
+
+        // Draggable companion menu window logic
+        let menuIsDragging = false;
+        let menuStartX = 0;
+        let menuStartY = 0;
+        let menuStartLeft = 0;
+        let menuStartTop = 0;
+
+        const menuHeader = menu.querySelector('.xz-menu-header');
+        if (menuHeader) {
+            menuHeader.style.cursor = 'move';
+            
+            menuHeader.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return; // Left mouse button only
+                e.stopPropagation();
+                e.preventDefault();
+                
+                menuIsDragging = true;
+                menuStartX = e.clientX;
+                menuStartY = e.clientY;
+                menuStartLeft = parseFloat(menu.style.left) || 0;
+                menuStartTop = parseFloat(menu.style.top) || 0;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!menuIsDragging) return;
+                e.stopPropagation();
+                e.preventDefault();
+                
+                const dx = e.clientX - menuStartX;
+                const dy = e.clientY - menuStartY;
+                
+                let newLeft = menuStartLeft + dx;
+                let newTop = menuStartTop + dy;
+                
+                // Clamp menu within document visible screen limits so user doesn't drag it offscreen
+                const minL = window.scrollX + 10;
+                const maxL = window.scrollX + window.innerWidth - 300;
+                const minT = window.scrollY + 70;
+                const maxT = window.scrollY + window.innerHeight - 250;
+                
+                if (newLeft < minL) newLeft = minL;
+                if (newLeft > maxL) newLeft = maxL;
+                if (newTop < minT) newTop = minT;
+                if (newTop > maxT) newTop = maxT;
+                
+                menu.style.left = `${newLeft}px`;
+                menu.style.top = `${newTop}px`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                menuIsDragging = false;
+            });
+
+            // Touch Support for dragging menu header
+            menuHeader.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length > 0) {
+                    e.stopPropagation();
+                    const touch = e.touches[0];
+                    menuIsDragging = true;
+                    menuStartX = touch.clientX;
+                    menuStartY = touch.clientY;
+                    menuStartLeft = parseFloat(menu.style.left) || 0;
+                    menuStartTop = parseFloat(menu.style.top) || 0;
+                }
+            }, { passive: false });
+
+            menuHeader.addEventListener('touchmove', (e) => {
+                if (!menuIsDragging) return;
+                if (e.touches && e.touches.length > 0) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - menuStartX;
+                    const dy = touch.clientY - menuStartY;
+                    
+                    let newLeft = menuStartLeft + dx;
+                    let newTop = menuStartTop + dy;
+                    
+                    const minL = window.scrollX + 10;
+                    const maxL = window.scrollX + window.innerWidth - 300;
+                    const minT = window.scrollY + 70;
+                    const maxT = window.scrollY + window.innerHeight - 250;
+                    
+                    if (newLeft < minL) newLeft = minL;
+                    if (newLeft > maxL) newLeft = maxL;
+                    if (newTop < minT) newTop = minT;
+                    if (newTop > maxT) newTop = maxT;
+                    
+                    menu.style.left = `${newLeft}px`;
+                    menu.style.top = `${newTop}px`;
+                }
+            }, { passive: false });
+
+            menuHeader.addEventListener('touchend', () => {
+                menuIsDragging = false;
+            });
+        }
+
+        // Robust click-away listener inside the capture phase to bypass propagation blocks
+        document.addEventListener('mousedown', (e) => {
+            const dockOrbEl = document.getElementById('xz-dock-orb');
+            const clickedOrb = dockOrbEl && dockOrbEl.contains(e.target);
+            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
+                closeMenu();
+            }
+        }, { capture: true });
+
+        document.addEventListener('touchstart', (e) => {
+            const dockOrbEl = document.getElementById('xz-dock-orb');
+            const clickedOrb = dockOrbEl && dockOrbEl.contains(e.target);
+            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
+                closeMenu();
+            }
+        }, { capture: true, passive: true });
+
+        // ── XZ Dock Orb click handler ─────────────────────────────────────────────
+        const dockOrb = document.getElementById('xz-dock-orb');
+
+        if (dockOrb) {
+            dockOrb.addEventListener('click', () => {
+
+                if (isFreeFlightActive) {
+                    // ── Start docking: XZ flies physically to the orb ────────────
+                    isFreeFlightActive    = false;
+                    isDockingInProgress   = true;
+                    isXZAtDock            = false;
+
+                    // Orb turns red immediately to signal docking intent
+                    dockOrb.classList.remove('xz-dock-orb--free');
+                    dockOrb.classList.add('xz-dock-orb--docked');
+
+                    // targetX/Y will be updated every frame in updateMovement()
+
+                } else if (isDockingInProgress) {
+                    // ── Cancel in-progress docking: return to free flight ────────
+                    isDockingInProgress = false;
+                    isFreeFlightActive  = true;
+
+                    dockOrb.classList.remove('xz-dock-orb--docked');
+                    dockOrb.classList.add('xz-dock-orb--free');
+
+                    pickNewTarget();
+
+                } else if (isXZAtDock) {
+                    // ── Undock: release XZ back into free flight ─────────────────
+                    isXZAtDock         = false;
+                    isFreeFlightActive = true;
+
+                    dockOrb.classList.remove('xz-dock-orb--docked');
+                    dockOrb.classList.add('xz-dock-orb--free');
+
+                    // Small natural launch push away from the corner
+                    vx = -1.2 - Math.random() * 0.8;
+                    vy = -(0.8 + Math.random() * 0.8);
+
+                    pickNewTarget();
+                }
+            });
+        }
+
+        // ── Sound Orb click handler ───────────────────────────────────────────────
+        const soundOrb = document.getElementById('xz-sound-orb');
+
+        if (soundOrb) {
+            soundOrb.addEventListener('click', () => {
+                isSoundEnabled = !isSoundEnabled;
+
+                if (!isSoundEnabled) {
+                    // Muting: immediately fade out any active drag sound
+                    stopXzDragSound();
+                    soundOrb.classList.remove('xz-sound-orb--on');
+                    soundOrb.classList.add('xz-sound-orb--off');
+                } else {
+                    soundOrb.classList.remove('xz-sound-orb--off');
+                    soundOrb.classList.add('xz-sound-orb--on');
+                }
+            });
+        }
+
+        const optionButtons = optionsList.querySelectorAll('.xz-option-btn');
+        optionButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playClickSound();
+                const qId = btn.getAttribute('data-question');
+                optionsList.style.display = 'none';
+                
+                typeText(dialogData[qId], () => {
+                    backBtn.style.display = 'block';
+                });
+            });
+        });
+
+        backBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playClickSound();
+            backBtn.style.display = 'none';
+            typeText(dialogData.greet, () => {
+                optionsList.style.display = 'flex';
+            });
+        });
+
+        // Init procedures
+        updateAvoidRects();
+        setTimeout(pickNewTarget, 1000);
+        requestAnimationFrame(updateMovement);
+        startAnimationTimer();
+    })();
 });
