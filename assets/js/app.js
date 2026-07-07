@@ -2023,6 +2023,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hasDragged = false;
             body.classList.add('state-dragging');
             closeMenu(true); // close silently so close sound doesn't conflict
+            isDockingInProgress = false; // Cancel docking if dragged manually
 
             if (eyesNormal) eyesNormal.style.display = 'none';
             if (eyesAngry) eyesAngry.style.display = 'block';
@@ -2083,7 +2084,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDragging) endDrag();
         });
 
-        // Touch support (Mobile & Tablet: triple-tap to enter alignment mode, tap outside to exit)
+        // Touch support (Mobile & Tablet: double-tap to enter alignment mode, tap outside to exit)
         body.addEventListener('touchstart', (e) => {
             e.stopPropagation();
             if (e.touches && e.touches.length === 1) {
@@ -2106,7 +2107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (tapTimeout) clearTimeout(tapTimeout);
 
-                if (tapCount === 3) {
+                if (tapCount === 2) {
                     tapCount = 0;
                     isAlignmentMode = true;
                     body.classList.add('xz-alignment-mode');
@@ -2206,9 +2207,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     targetX = dkX;
                     targetY = dkY;
 
-                    // Arrival detection — snap into dock once close enough
+                    // Arrival detection — snap into dock once close enough (reduced to 5px for smooth glide)
                     const dockDist = Math.hypot(x - dkX, y - dkY);
-                    if (dockDist < 38) {
+                    if (dockDist < 5) {
                         isDockingInProgress = false;
                         isXZAtDock = true;
                         const orb = document.getElementById('xz-dock-orb');
