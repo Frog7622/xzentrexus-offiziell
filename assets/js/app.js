@@ -1889,6 +1889,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let mobileTouchTimeout = null;
         let mobileTouchStartPoint = null;
         let mobileDragUnlocked = false;
+        let isAlignmentMode = false;
+        let tapCount = 0;
+        let lastTapTime = 0;
+        let tapTimeout = null;
 
         // Cabrio Spot-Drive Bumping Physics
         let carBumpY = 0;
@@ -2045,8 +2049,10 @@ document.addEventListener('DOMContentLoaded', () => {
             body.classList.remove('state-dragging');
             stopXzDragSound(); // Stop the drag sound immediately on release
 
-            if (eyesNormal) eyesNormal.style.display = 'block';
-            if (eyesAngry) eyesAngry.style.display = 'none';
+            if (!isAlignmentMode) {
+                if (eyesNormal) eyesNormal.style.display = 'block';
+                if (eyesAngry) eyesAngry.style.display = 'none';
+            }
             if (handsLeft) handsLeft.style.display = 'none';
             if (handsRight) handsRight.style.display = 'none';
 
@@ -2077,19 +2083,49 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDragging) endDrag();
         });
 
-        // Touch support (Mobile & Tablet: 3s hold-to-drag, single-tap to open menu)
+        // Touch support (Mobile & Tablet: triple-tap to enter alignment mode, tap outside to exit)
         body.addEventListener('touchstart', (e) => {
             e.stopPropagation();
             if (e.touches && e.touches.length === 1) {
                 const touch = e.touches[0];
                 mobileTouchStartPoint = { x: touch.clientX, y: touch.clientY };
-                mobileDragUnlocked = false;
 
-                if (mobileTouchTimeout) clearTimeout(mobileTouchTimeout);
-                mobileTouchTimeout = setTimeout(() => {
-                    mobileDragUnlocked = true;
+                if (isAlignmentMode) {
+                    // Start dragging immediately if in alignment mode
                     startDrag(touch.clientX, touch.clientY);
-                }, 3000);
+                    return;
+                }
+
+                const now = Date.now();
+                if (now - lastTapTime < 350) {
+                    tapCount++;
+                } else {
+                    tapCount = 1;
+                }
+                lastTapTime = now;
+
+                if (tapTimeout) clearTimeout(tapTimeout);
+
+                if (tapCount === 3) {
+                    tapCount = 0;
+                    isAlignmentMode = true;
+                    body.classList.add('xz-alignment-mode');
+                    closeMenu(true); // silent close
+                    if (eyesNormal) eyesNormal.style.display = 'none';
+                    if (eyesAngry) eyesAngry.style.display = 'block';
+                    startDrag(touch.clientX, touch.clientY);
+                } else {
+                    tapTimeout = setTimeout(() => {
+                        if (!isAlignmentMode) {
+                            if (isMenuOpen) {
+                                closeMenu();
+                            } else {
+                                openMenu();
+                            }
+                        }
+                        tapCount = 0;
+                    }, 350);
+                }
             }
         }, { passive: true });
 
@@ -2097,15 +2133,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.touches && e.touches.length > 0) {
                 const touch = e.touches[0];
 
-                if (!mobileDragUnlocked && mobileTouchStartPoint) {
+                if (!isAlignmentMode && mobileTouchStartPoint) {
                     const dx = touch.clientX - mobileTouchStartPoint.x;
                     const dy = touch.clientY - mobileTouchStartPoint.y;
                     const dist = Math.hypot(dx, dy);
                     if (dist > 10) {
-                        if (mobileTouchTimeout) {
-                            clearTimeout(mobileTouchTimeout);
-                            mobileTouchTimeout = null;
-                        }
+                        tapCount = 0;
                     }
                 }
 
@@ -2117,23 +2150,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
-            if (mobileTouchTimeout) {
-                clearTimeout(mobileTouchTimeout);
-                mobileTouchTimeout = null;
-            }
-
             if (isDragging) {
                 endDrag();
-            } else if (mobileTouchStartPoint && !mobileDragUnlocked) {
-                // Trigger tap close/open menu
-                if (isMenuOpen) {
-                    closeMenu();
-                } else {
-                    openMenu();
-                }
             }
             mobileTouchStartPoint = null;
-            mobileDragUnlocked = false;
         });
 
         // Steer towards target and avoid obstacles
@@ -2833,6 +2853,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
                 closeMenu();
             }
+            // Deactivate Alignment Mode if clicked outside XZ body
+            if (isAlignmentMode && !body.contains(e.target)) {
+                isAlignmentMode = false;
+                body.classList.remove('xz-alignment-mode');
+                if (eyesNormal) eyesNormal.style.display = 'block';
+                if (eyesAngry) eyesAngry.style.display = 'none';
+            }
         }, { capture: true });
 
         document.addEventListener('touchstart', (e) => {
@@ -2840,6 +2867,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const clickedOrb = dockOrbEl && dockOrbEl.contains(e.target);
             if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
                 closeMenu();
+            }
+            // Deactivate Alignment Mode if tapped outside XZ body
+            if (isAlignmentMode && !body.contains(e.target)) {
+                isAlignmentMode = false;
+                body.classList.remove('xz-alignment-mode');
+                if (eyesNormal) eyesNormal.style.display = 'block';
+                if (eyesAngry) eyesAngry.style.display = 'none';
             }
         }, { capture: true, passive: true });
 

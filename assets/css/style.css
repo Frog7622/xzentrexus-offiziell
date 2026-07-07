@@ -3806,3 +3806,18 @@ body {
         right: 92px;
     }
 }
+
+/* ── Visual alignment mode (triple-tap) styling ── */
+.xz-companion-body.xz-alignment-mode {
+    filter: drop-shadow(0 0 22px rgba(255, 140, 0, 0.95)) !important;
+    animation: xzAlignmentGlow 1.2s ease-in-out infinite alternate !important;
+}
+
+@keyframes xzAlignmentGlow {
+    0% {
+        filter: drop-shadow(0 0 10px rgba(255, 140, 0, 0.6));
+    }
+    100% {
+        filter: drop-shadow(0 0 26px rgba(255, 60, 0, 0.95));
+    }
+}
