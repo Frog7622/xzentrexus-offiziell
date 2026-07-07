@@ -1847,9 +1847,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!root || !body || !menu) return;
 
-        // Position & Movement variables
-        let x = window.innerWidth - 80;
-        let y = window.innerHeight - 150;
+        // Position & Movement variables (relative to fixed viewport)
+        let x = document.documentElement.clientWidth - 80;
+        let y = document.documentElement.clientHeight - 150;
         let vx = 0;
         let vy = 0;
         let targetX = x;
@@ -1861,9 +1861,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let hasDragged = false;
         let dragOffsetRotation = 0;
 
-        // Mouse Gaze Tracking state
-        let mouseX = window.innerWidth / 2;
-        let mouseY = window.innerHeight / 2;
+        // Mouse/Touch viewport coordinates tracking
+        let mouseX = document.documentElement.clientWidth / 2;
+        let mouseY = document.documentElement.clientHeight / 2;
 
         window.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
@@ -1884,8 +1884,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let isFreeFlightActive = true;
         let isXZAtDock = false;
         let isDockingInProgress = false; // XZ is flying toward dock, not yet arrived
-        let prevScrollX = window.scrollX;  // used for scroll-delta compensation during docking
-        let prevScrollY = window.scrollY;
+
+        // Mobile touch control variables
+        let mobileTouchTimeout = null;
+        let mobileTouchStartPoint = null;
+        let mobileDragUnlocked = false;
 
         // Cabrio Spot-Drive Bumping Physics
         let carBumpY = 0;
@@ -1920,10 +1923,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 elms.forEach(el => {
                     const rect = el.getBoundingClientRect();
                     if (rect.width > 0 && rect.height > 0) {
-                        const left = rect.left + window.scrollX;
-                        const right = rect.right + window.scrollX;
-                        const top = rect.top + window.scrollY;
-                        const bottom = rect.bottom + window.scrollY;
+                        const left = rect.left;
+                        const right = rect.right;
+                        const top = rect.top;
+                        const bottom = rect.bottom;
                         avoidRects.push({
                             left: left,
                             right: right,
@@ -1952,8 +1955,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let isWaitingForNextTarget = false;
 
         function getSectorBounds(sector) {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
+            const w = document.documentElement.clientWidth;
+            const h = document.documentElement.clientHeight;
             const xMin = sector.minX < 1 ? sector.minX * w : sector.minX;
             const xMax = sector.maxX < 1 ? sector.maxX * w : sector.maxX;
             const yMin = sector.minY < 1 ? sector.minY * h : sector.minY;
@@ -1977,8 +1980,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const bounds = getSectorBounds(sector);
 
             while (attempts < 20 && !foundSafeTarget) {
-                const tx = bounds.xMin + Math.random() * (bounds.xMax - bounds.xMin) + window.scrollX;
-                const ty = bounds.yMin + Math.random() * (bounds.yMax - bounds.yMin) + window.scrollY;
+                const tx = bounds.xMin + Math.random() * (bounds.xMax - bounds.xMin);
+                const ty = bounds.yMin + Math.random() * (bounds.yMax - bounds.yMin);
 
                 let isSafe = true;
                 for (let rect of avoidRects) {
@@ -1998,8 +2001,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!foundSafeTarget) {
-                targetX = window.innerWidth - 80 + window.scrollX;
-                targetY = window.innerHeight - 150 + window.scrollY;
+                targetX = document.documentElement.clientWidth - 80;
+                targetY = document.documentElement.clientHeight - 150;
             }
         }
 
@@ -2049,11 +2052,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             isXZAtDock = false; // XZ has been manually dragged, so he is no longer at the dock
 
-            // pick target coordinates near release point to settle down (relative to viewport scroll)
-            const minX = window.scrollX + 50;
-            const maxX = window.scrollX + window.innerWidth - 50;
-            const minY = window.scrollY + 100;
-            const maxY = window.scrollY + window.innerHeight - 100;
+            // pick target coordinates near release point to settle down
+            const minX = 50;
+            const maxX = document.documentElement.clientWidth - 50;
+            const minY = 100;
+            const maxY = document.documentElement.clientHeight - 100;
             targetX = Math.max(minX, Math.min(maxX, x));
             targetY = Math.max(minY, Math.min(maxY, y));
         }
@@ -2074,27 +2077,63 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isDragging) endDrag();
         });
 
-        // Touch support
+        // Touch support (Mobile & Tablet: 3s hold-to-drag, single-tap to open menu)
         body.addEventListener('touchstart', (e) => {
             e.stopPropagation();
-            if (e.touches && e.touches.length > 0) {
+            if (e.touches && e.touches.length === 1) {
                 const touch = e.touches[0];
-                startDrag(touch.clientX, touch.clientY);
+                mobileTouchStartPoint = { x: touch.clientX, y: touch.clientY };
+                mobileDragUnlocked = false;
+
+                if (mobileTouchTimeout) clearTimeout(mobileTouchTimeout);
+                mobileTouchTimeout = setTimeout(() => {
+                    mobileDragUnlocked = true;
+                    startDrag(touch.clientX, touch.clientY);
+                }, 3000);
             }
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
-            if (isDragging) {
-                e.preventDefault(); // Stop mobile page scroll while dragging XZ
-                if (e.touches && e.touches.length > 0) {
-                    const touch = e.touches[0];
+            if (e.touches && e.touches.length > 0) {
+                const touch = e.touches[0];
+
+                if (!mobileDragUnlocked && mobileTouchStartPoint) {
+                    const dx = touch.clientX - mobileTouchStartPoint.x;
+                    const dy = touch.clientY - mobileTouchStartPoint.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 10) {
+                        if (mobileTouchTimeout) {
+                            clearTimeout(mobileTouchTimeout);
+                            mobileTouchTimeout = null;
+                        }
+                    }
+                }
+
+                if (isDragging) {
+                    e.preventDefault(); // Stop mobile page scroll while dragging XZ
                     handleDragMove(touch.clientX, touch.clientY);
                 }
             }
         }, { passive: false });
 
         window.addEventListener('touchend', () => {
-            if (isDragging) endDrag();
+            if (mobileTouchTimeout) {
+                clearTimeout(mobileTouchTimeout);
+                mobileTouchTimeout = null;
+            }
+
+            if (isDragging) {
+                endDrag();
+            } else if (mobileTouchStartPoint && !mobileDragUnlocked) {
+                // Trigger tap close/open menu
+                if (isMenuOpen) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+            }
+            mobileTouchStartPoint = null;
+            mobileDragUnlocked = false;
         });
 
         // Steer towards target and avoid obstacles
@@ -2105,40 +2144,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isXZAtDock && !isDragging) {
                 const cw = document.documentElement.clientWidth;
                 const ch = document.documentElement.clientHeight;
-                x = window.scrollX + cw  - 55;
-                y = window.scrollY + ch  - 95;
+                x = cw - 55;
+                y = ch - 95;
                 vx = 0; vy = 0;
-                prevScrollX = window.scrollX;   // keep in sync
-                prevScrollY = window.scrollY;
                 const hoverY = Math.cos(Date.now() / 450) * 1.5;
                 body.style.transform = `translate3d(${x}px, ${y + hoverY}px, 0) rotate(0deg)`;
                 requestAnimationFrame(updateMovement);
                 return;
             }
 
-            // ── Scroll compensation: keep XZ viewport-relative ───────────────────
-            // Shift XZ's absolute document coords by the scroll delta each frame.
-            // This makes him move with the viewport (companion behaviour), without
-            // hard boundary clamping which would cause jarring pulls when scrolling.
-            // Applied in all states except drag (where the user controls position)
-            // and docked (which has its own pinning logic above).
-            if (!isDragging) {
-                const sdx = window.scrollX - prevScrollX;
-                const sdy = window.scrollY - prevScrollY;
-                if (sdx !== 0 || sdy !== 0) {
-                    x += sdx;
-                    y += sdy;
-                    targetX += sdx;
-                    targetY += sdy;
-                }
-            }
-            prevScrollX = window.scrollX;
-            prevScrollY = window.scrollY;
-
             // Sichern vor NaN-Fehlern (Bulletproof physics reset)
             if (isNaN(x) || isNaN(y) || isNaN(vx) || isNaN(vy) || isNaN(targetX) || isNaN(targetY)) {
-                x = window.innerWidth - 80 + window.scrollX;
-                y = window.innerHeight - 150 + window.scrollY;
+                x = document.documentElement.clientWidth - 80;
+                y = document.documentElement.clientHeight - 150;
                 vx = 0;
                 vy = 0;
                 targetX = x;
@@ -2146,27 +2164,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (isNaN(mouseX) || isNaN(mouseY)) {
-                mouseX = window.innerWidth / 2;
-                mouseY = window.innerHeight / 2;
+                mouseX = document.documentElement.clientWidth / 2;
+                mouseY = document.documentElement.clientHeight / 2;
             }
 
-            // Viewport boundaries in document coordinates
+            // Viewport boundaries (fixed coordinates)
             // Use clientWidth and clientHeight to exclude scrollbar widths on desktop
             const cw = document.documentElement.clientWidth;
             const ch = document.documentElement.clientHeight;
             const borderPad = 40;
-            const minX = window.scrollX + borderPad;
-            const maxX = window.scrollX + cw - borderPad;
-            const minY = window.scrollY + borderPad + 40;
-            const maxY = window.scrollY + ch - borderPad;
+            const minX = borderPad;
+            const maxX = cw - borderPad;
+            const minY = borderPad + 40;
+            const maxY = ch - borderPad;
 
             // Flight mode clamping / docking-flight target tracking
             if (!isFreeFlightActive) {
                 if (isDockingInProgress) {
-                    const cw = document.documentElement.clientWidth;
-                    const ch = document.documentElement.clientHeight;
-                    const dkX = window.scrollX + cw - 55;
-                    const dkY = window.scrollY + ch - 95;
+                    const dkX = cw - 55;
+                    const dkY = ch - 95;
                     targetX = dkX;
                     targetY = dkY;
 
@@ -2196,11 +2212,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const blurVal = Math.min(2.5, speed * 0.6);
 
             // Realistic Perspective Shadow Calculation
-            // Light source sits at center screen (window.innerWidth / 2)
-            const screenCx = window.innerWidth / 2;
-            const screenCy = window.innerHeight / 2;
-            const shadowDx = (x - (screenCx + window.scrollX)) * 0.08;
-            const shadowDy = (y - (screenCy + window.scrollY)) * 0.08 + 12; // light elevated
+            // Light source sits at center screen
+            const screenCx = cw / 2;
+            const screenCy = ch / 2;
+            const shadowDx = (x - screenCx) * 0.08;
+            const shadowDy = (y - screenCy) * 0.08 + 12; // light elevated
             
             // Hover bobbing factor affects shadow blur & opacity
             const bobFactor = Math.sin(Date.now() / 450);
@@ -2213,8 +2229,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Gaze tracking processing (runs during special animations)
             if (eyesGroup && !isDragging) {
                 if ((currentAnimation === 'BRAIN_RIDE' || currentAnimation === 'CAR_RIDE') && !isMenuOpen) {
-                    const dx = mouseX + window.scrollX - x;
-                    const dy = mouseY + window.scrollY - y;
+                    const dx = mouseX - x;
+                    const dy = mouseY - y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     let moveX = 0;
                     let moveY = 0;
@@ -2235,8 +2251,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prevX = x;
                 const prevY = y;
                 
-                const pageMouseX = mouseX + window.scrollX;
-                const pageMouseY = mouseY + window.scrollY;
+                const pageMouseX = mouseX;
+                const pageMouseY = mouseY;
 
                 x += (pageMouseX - x) * 0.14;
                 y += (pageMouseY - y) * 0.14;
@@ -2435,10 +2451,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // No hard viewport boundary clamp in free flight —
-            // XZ lives in document space and is not forced back into view on scroll.
-            // pickNewTarget() already selects destinations within the current viewport,
-            // so XZ naturally stays in visited areas without being artificially dragged.
+            // Bouncing off screen boundaries in free flight
+            if (x < minX) {
+                x = minX;
+                vx = Math.abs(vx) * 0.8 + 0.2; // bounce right
+                pickNewTarget();
+            } else if (x > maxX) {
+                x = maxX;
+                vx = -Math.abs(vx) * 0.8 - 0.2; // bounce left
+                pickNewTarget();
+            }
+
+            if (y < minY) {
+                y = minY;
+                vy = Math.abs(vy) * 0.8 + 0.2; // bounce down
+                pickNewTarget();
+            } else if (y > maxY) {
+                y = maxY;
+                vy = -Math.abs(vy) * 0.8 - 0.2; // bounce up
+                pickNewTarget();
+            }
 
             const speedNorm = Math.sqrt(vx * vx + vy * vy);
             if (speedNorm > SPEED_LIMIT) {
@@ -2614,21 +2646,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const menuWidth = 290;
             const menuHeight = 240;
             
-            // Current viewport scroll-aware boundaries
-            const minScrollX = window.scrollX + 15;
-            const maxScrollX = window.scrollX + window.innerWidth - menuWidth - 15;
-            const minScrollY = window.scrollY + 70;
+            // Viewport-relative boundaries (fixed positioning)
+            const minX = 15;
+            const maxX = document.documentElement.clientWidth - menuWidth - 15;
+            const minY = 70; // avoid header
 
             // Always position Below XZ: 40px XZ radius + 20px gap = 60px
             let menuLeft = x - menuWidth / 2;
             let menuTop = y + 60;
 
             // Clamp horizontally to stay inside viewport
-            if (menuLeft < minScrollX) menuLeft = minScrollX;
-            if (menuLeft > maxScrollX) menuLeft = maxScrollX;
+            if (menuLeft < minX) menuLeft = minX;
+            if (menuLeft > maxX) menuLeft = maxX;
 
             // Clamp top edge to not overlap header
-            if (menuTop < minScrollY) menuTop = minScrollY;
+            if (menuTop < minY) menuTop = minY;
 
             menu.style.left = `${menuLeft}px`;
             menu.style.top = `${menuTop}px`;
@@ -2730,11 +2762,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 let newLeft = menuStartLeft + dx;
                 let newTop = menuStartTop + dy;
                 
-                // Clamp menu within document visible screen limits so user doesn't drag it offscreen
-                const minL = window.scrollX + 10;
-                const maxL = window.scrollX + window.innerWidth - 300;
-                const minT = window.scrollY + 70;
-                const maxT = window.scrollY + window.innerHeight - 250;
+                // Clamp menu within viewport limits so user doesn't drag it offscreen
+                const minL = 10;
+                const maxL = document.documentElement.clientWidth - 300;
+                const minT = 70;
+                const maxT = document.documentElement.clientHeight - 250;
                 
                 if (newLeft < minL) newLeft = minL;
                 if (newLeft > maxL) newLeft = maxL;
@@ -2774,10 +2806,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     let newLeft = menuStartLeft + dx;
                     let newTop = menuStartTop + dy;
                     
-                    const minL = window.scrollX + 10;
-                    const maxL = window.scrollX + window.innerWidth - 300;
-                    const minT = window.scrollY + 70;
-                    const maxT = window.scrollY + window.innerHeight - 250;
+                    const minL = 10;
+                    const maxL = document.documentElement.clientWidth - 300;
+                    const minT = 70;
+                    const maxT = document.documentElement.clientHeight - 250;
                     
                     if (newLeft < minL) newLeft = minL;
                     if (newLeft > maxL) newLeft = maxL;

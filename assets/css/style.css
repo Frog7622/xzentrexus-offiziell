@@ -502,8 +502,8 @@ button, input, textarea {
     font-size: clamp(1.0rem, 7.8cqw, 6.0rem);
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    margin-right: -0.15em;
-    margin-bottom: 1rem;
+    text-indent: 0.15em;
+    margin: 0 0 1rem 0;
     background: linear-gradient(180deg, #FFFFFF 0%, #B3B3B3 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -3177,11 +3177,13 @@ body.modal-open {
 }
 
 .xz-companion-body {
-    position: absolute;
+    position: fixed;
     width: 52px;
     height: 52px;
-    left: -26px;
-    top: -26px;
+    left: 0;
+    top: 0;
+    margin-left: -26px;
+    margin-top: -26px;
     cursor: pointer;
     pointer-events: auto;
     will-change: transform;
@@ -3339,7 +3341,7 @@ body.modal-open {
 
 /* Interactive Glassmorphic Chat Menu */
 .xz-companion-menu {
-    position: absolute;
+    position: fixed;
     width: 290px;
     max-width: 90vw;
     background: rgba(10, 10, 10, 0.85);
