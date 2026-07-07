@@ -2667,21 +2667,49 @@ document.addEventListener('DOMContentLoaded', () => {
             const menuWidth = 290;
             const menuHeight = 240;
             
-            // Viewport-relative boundaries (fixed positioning)
+            const cw = document.documentElement.clientWidth;
+            const ch = document.documentElement.clientHeight;
+
+            let menuLeft = 0;
+            let menuTop = 0;
+
+            if (cw >= 600) {
+                // DESKTOP / TABLET: Place next to XZ horizontally (left or right)
+                // Centered vertically relative to XZ
+                menuTop = y - menuHeight / 2;
+
+                // Choose side with more horizontal space
+                if (x > cw / 2) {
+                    // Place to the Left of XZ
+                    menuLeft = x - 26 - menuWidth - 15;
+                } else {
+                    // Place to the Right of XZ
+                    menuLeft = x + 26 + 15;
+                }
+            } else {
+                // MOBILE: Center horizontally in the viewport
+                menuLeft = (cw - menuWidth) / 2;
+
+                // Position vertically above or below XZ based on XZ's position
+                if (y > ch / 2) {
+                    // XZ is in bottom half -> place menu above XZ
+                    menuTop = y - 26 - menuHeight - 15;
+                } else {
+                    // XZ is in top half -> place menu below XZ
+                    menuTop = y + 26 + 15;
+                }
+            }
+
+            // --- Robust Viewport Clamping (Safe boundary guards) ---
             const minX = 15;
-            const maxX = document.documentElement.clientWidth - menuWidth - 15;
+            const maxX = cw - menuWidth - 15;
             const minY = 70; // avoid header
+            const maxY = ch - menuHeight - 15;
 
-            // Always position Below XZ: 40px XZ radius + 20px gap = 60px
-            let menuLeft = x - menuWidth / 2;
-            let menuTop = y + 60;
-
-            // Clamp horizontally to stay inside viewport
             if (menuLeft < minX) menuLeft = minX;
             if (menuLeft > maxX) menuLeft = maxX;
-
-            // Clamp top edge to not overlap header
             if (menuTop < minY) menuTop = minY;
+            if (menuTop > maxY) menuTop = maxY;
 
             menu.style.left = `${menuLeft}px`;
             menu.style.top = `${menuTop}px`;
