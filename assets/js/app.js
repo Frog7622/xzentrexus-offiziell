@@ -2987,8 +2987,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const optionButtons = optionsList.querySelectorAll('.xz-option-btn');
         optionButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
+            const handleOptionClick = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
                 playClickSound();
                 const qId = btn.getAttribute('data-question');
                 optionsList.style.display = 'none';
@@ -2996,17 +2999,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 typeText(dialogData[qId], () => {
                     backBtn.style.display = 'block';
                 });
-            });
+            };
+            btn.addEventListener('click', handleOptionClick);
+            btn.addEventListener('touchstart', handleOptionClick, { passive: false });
         });
 
-        backBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+        const handleBackClick = (e) => {
+            if (e) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
             playClickSound();
             backBtn.style.display = 'none';
             typeText(dialogData.greet, () => {
                 optionsList.style.display = 'flex';
             });
-        });
+        };
+        backBtn.addEventListener('click', handleBackClick);
+        backBtn.addEventListener('touchstart', handleBackClick, { passive: false });
 
         // Init procedures
         updateAvoidRects();
