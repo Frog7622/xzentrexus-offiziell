@@ -903,32 +903,82 @@
                 </div>
                 <!-- Options Area -->
                 <div id="xz-options-list" class="xz-options-list">
-                    <button class="xz-option-btn" data-question="1">Wer bist du?</button>
-                    <button class="xz-option-btn" data-question="2">Wer ist xzentrexus?</button>
-                    <button class="xz-option-btn" data-question="3">Unterstützen?</button>
+                    <!-- Search Input -->
+                    <div class="xz-search-wrapper">
+                        <input type="text" id="xz-question-search" placeholder="Frage suchen..." autocomplete="off" />
+                        <svg class="xz-search-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </div>
+
+                    <!-- Category 1: xzentrexus -->
+                    <div class="xz-category-group" data-category="xzentrexus">
+                        <div class="xz-category-divider"><span>xzentrexus</span></div>
+                        <button class="xz-option-btn" data-question="1">Wer bist du?</button>
+                        <button class="xz-option-btn" data-question="2">Wer ist xzentrexus?</button>
+                        <button class="xz-option-btn" data-question="3">Unterstützen?</button>
+                    </div>
+
+                    <!-- Category 2: Seiten-Infos -->
+                    <div class="xz-category-group" data-category="seite">
+                        <div class="xz-category-divider"><span>Seiten-Infos</span></div>
+                        <button class="xz-option-btn" data-question="4">Die Island?</button>
+                        <button class="xz-option-btn" data-question="5">Backup & Teilen?</button>
+                    </div>
                 </div>
                 <button id="xz-back-btn" class="xz-back-btn" style="display: none;">Zurück</button>
             </div>
         </div>
 
-        <!-- XZ Dock Orb -->
-        <button id="xz-dock-orb" class="xz-dock-orb xz-dock-orb--free" aria-label="XZ Dock steuern"></button>
+        <!-- XZ Customizable Dock Island Wrapper -->
+        <div class="xz-dock-island-wrapper">
+            <div id="xz-dock-island" class="xz-dock-island">
+                <!-- 4 Quick Action Slots -->
+                <div class="xz-island-slot" data-slot="0"></div>
+                <div class="xz-island-slot" data-slot="1"></div>
+                <div class="xz-island-slot" data-slot="2"></div>
+                <div class="xz-island-slot" data-slot="3"></div>
+                
+                <!-- Edit Mode Toggle Button -->
+                <button class="xz-island-edit-btn" id="xz-island-edit-btn" aria-label="Dock bearbeiten">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                </button>
 
-        <!-- XZ Sound Orb -->
-        <button id="xz-sound-orb" class="xz-sound-orb xz-sound-orb--on" aria-label="Sound ein/aus">
-            <!-- Sound ON icon -->
-            <svg class="xz-sound-icon xz-sound-icon--on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 5L6 9H3V15H6L11 19V5Z" fill="currentColor"/>
-                <path d="M15.54 8.46C16.48 9.4 17 10.67 17 12C17 13.33 16.48 14.6 15.54 15.54" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <path d="M19.07 4.93C20.94 6.79 22 9.33 22 12C22 14.67 20.94 17.21 19.07 19.07" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            <!-- Sound OFF icon -->
-            <svg class="xz-sound-icon xz-sound-icon--off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
-                <path d="M11 5L6 9H3V15H6L11 19V5Z" fill="currentColor"/>
-                <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-        </button>
+            </div>
+            <!-- Action Selection Menu (Hidden by default, shown during editing) -->
+            <div class="xz-island-selector" id="xz-island-selector">
+                <div class="xz-selector-header">Aktion wählen</div>
+                <div class="xz-selector-options">
+                    <!-- Dynamic choices will be injected here by app.js -->
+                </div>
+                <!-- Settings Management Footer -->
+                <div class="xz-selector-footer">
+                    <button class="xz-selector-footer-btn" id="xz-island-share-btn" title="Einstellungen per Link teilen">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                        Teilen
+                    </button>
+                    <button class="xz-selector-footer-btn" id="xz-island-export-btn" title="Einstellungen herunterladen">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export
+                    </button>
+                    <button class="xz-selector-footer-btn" id="xz-island-import-btn" title="Einstellungen hochladen">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Import
+                    </button>
+                    <input type="file" id="xz-island-file-input" accept=".json" style="display: none;" />
+                </div>
+                <div class="xz-island-feedback" id="xz-island-feedback"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Custom App JS -->

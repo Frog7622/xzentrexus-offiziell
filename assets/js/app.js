@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let xzClickBuffer = null;
     let xzDragBuffer = null;
     let xzCloseBuffer = null;
+    let islandBuffer = null;
     let xzDragSourceNode = null;
     let xzDragGainNode = null;
     let xzDragFadeInterval = null;
@@ -75,6 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
     xzCloseAudioFallback.volume = 1.0;   // +3.5 dB (HTML5 max 1.0)
     xzCloseAudioFallback.preload = 'auto';
 
+    const islandAudioFallback = new Audio('assets/music/island.wav');
+    islandAudioFallback.volume = 1.0;
+    islandAudioFallback.preload = 'auto';
+
     if (AudioContextClass) {
         audioCtx = new AudioContextClass();
         
@@ -86,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         preloadSound('assets/music/xz_click.wav').then(buffer => { xzClickBuffer = buffer; });
         preloadSound('assets/music/xz_drag.wav').then(buffer => { xzDragBuffer = buffer; });
         preloadSound('assets/music/xz_close.wav').then(buffer => { xzCloseBuffer = buffer; });
+        preloadSound('assets/music/island.wav').then(buffer => { islandBuffer = buffer; });
     }
 
     async function preloadSound(url) {
@@ -319,6 +325,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function playIslandSound() {
+        if (!isSoundEnabled) return;
+        if (audioCtx && islandBuffer) {
+            playBuffer(islandBuffer, 1.0);
+        } else {
+            if (islandAudioFallback) {
+                islandAudioFallback.currentTime = 0;
+                islandAudioFallback.play().catch(e => console.log('Fallback island play failed:', e));
+            }
+        }
+    }
+
     // Earliest user interaction AudioContext & HTML5 Audio unlocking
     let audioUnlocked = false;
     const unlockAudio = () => {
@@ -380,6 +398,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 xzCloseAudioFallback.volume = origVol;
                 xzCloseAudioFallback.currentTime = 0;
             }).catch(e => console.log('Unlock xzClose fallback failed:', e));
+        }
+
+        if (islandAudioFallback) {
+            const origVol = islandAudioFallback.volume;
+            islandAudioFallback.volume = 0;
+            islandAudioFallback.play().then(() => {
+                islandAudioFallback.pause();
+                islandAudioFallback.volume = origVol;
+                islandAudioFallback.currentTime = 0;
+            }).catch(e => console.log('Unlock island fallback failed:', e));
         }
         
         audioUnlocked = true;
@@ -1834,6 +1862,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dialogText = document.getElementById('xz-dialog-text');
         const optionsList = document.getElementById('xz-options-list');
         const backBtn = document.getElementById('xz-back-btn');
+        const searchInput = document.getElementById('xz-question-search');
         const droneSvg = body ? body.querySelector('.xz-drone-svg') : null;
 
         const assetBrain = body ? body.querySelector('.xz-asset-brain') : null;
@@ -2024,6 +2053,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body.classList.add('state-dragging');
             closeMenu(true); // close silently so close sound doesn't conflict
             isDockingInProgress = false; // Cancel docking if dragged manually
+            if (typeof renderIsland === 'function') renderIsland();
 
             if (eyesNormal) eyesNormal.style.display = 'none';
             if (eyesAngry) eyesAngry.style.display = 'block';
@@ -2058,6 +2088,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (handsRight) handsRight.style.display = 'none';
 
             isXZAtDock = false; // XZ has been manually dragged, so he is no longer at the dock
+            if (typeof renderIsland === 'function') renderIsland();
 
             // pick target coordinates near release point to settle down
             const minX = 50;
@@ -2212,11 +2243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (dockDist < 5) {
                         isDockingInProgress = false;
                         isXZAtDock = true;
-                        const orb = document.getElementById('xz-dock-orb');
-                        if (orb) {
-                            orb.classList.remove('xz-dock-orb--free', 'xz-dock-orb--docking');
-                            orb.classList.add('xz-dock-orb--docked');
-                        }
+                        if (typeof renderIsland === 'function') renderIsland();
                     }
                 } else if (!isXZAtDock) {
                     // Parked at a custom (dragged) position — clamp to viewport
@@ -2641,7 +2668,9 @@ document.addEventListener('DOMContentLoaded', () => {
             greet: "Hey! Ich bin XZ. Hast du eine Frage an mich?",
             1: "Ich bin XZ – dein kleiner Begleiter auf der Website von xzentrexus.",
             2: "xzentrexus heißt mit bürgerlichem Namen Leandro. In den vergangenen Monaten und Jahren hat er sich auf Plattformen wie TikTok und YouTube eine Community aufgebaut. Sein aktueller Schwerpunkt liegt auf der Musik. Sein neuestes Album trägt den Titel 'Anfang'.",
-            3: "Jeglicher Support auf den verlinkten Social-Media-Kanälen – egal ob Like, Kommentar oder Follow – bedeutet uns unglaublich viel. Auch mit dem Kauf unserer Produkte unterstützt du xzentrexus's Projekte direkt. Vielen Dank für deine Unterstützung! ❤️"
+            3: "Jeglicher Support auf den verlinkten Social-Media-Kanälen – egal ob Like, Kommentar oder Follow – bedeutet uns unglaublich viel. Auch mit dem Kauf unserer Produkte unterstützt du xzentrexus's Projekte direkt. Vielen Dank für deine Unterstützung! ❤️",
+            4: "Die schwebende Island ganz unten ist deine persönliche Steuerzentrale! Du kannst sie über das Zahnrad-Symbol rechts bearbeiten und 4 Slots nach deinen Wünschen belegen (Lautstärke, mein Docking, Flugmodus, Warenkorb, Scrollen uvm.). Deine Auswahl wird offline im Browser gesichert, und du kannst dein Setup per Link teilen oder als Einstellungsdatei exportieren.",
+            5: "Klicke auf das Zahnrad rechts an der Island, um den Bearbeitungsmodus zu starten. Unten im Menü siehst du drei Knöpfe: 1. 'Teilen' kopiert einen Link, um dein Setup auf andere Geräte zu senden. 2. 'Export' lädt deine Tastenbelegung als Datei ('xz_settings.json') auf deinen PC herunter. 3. 'Import' lädt diese Datei wieder hoch, um deine gespeicherten Tasten sofort wieder einzuspielen!"
         };
 
         let typewriterTimeout = null;
@@ -2665,7 +2694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function positionMenu() {
             const menuWidth = 290;
-            const menuHeight = 240;
+            const menuHeight = 350;
             
             const cw = document.documentElement.clientWidth;
             const ch = document.documentElement.clientHeight;
@@ -2721,6 +2750,11 @@ document.addEventListener('DOMContentLoaded', () => {
             menu.style.display = 'block';
             positionMenu();
             setTimeout(() => menu.classList.add('open'), 10);
+            
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            }
             
             typeText(dialogData.greet);
             optionsList.style.display = 'flex';
@@ -2875,11 +2909,37 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // ── 3D Tilt Hover Engine for Companion Menu ──
+        if (menu) {
+            const handleMenuMouseMove = (e) => {
+                if (window.innerWidth < 1024) return; // Avoid on mobile/touch screens
+                if (menuIsDragging) return; // Don't tilt while user is actively dragging the window
+                
+                const rect = menu.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                const maxTilt = 8;
+                const tiltX = -(y / (rect.height / 2)) * maxTilt;
+                const tiltY = (x / (rect.width / 2)) * maxTilt;
+
+                menu.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02) translateY(0)`;
+            };
+
+            const handleMenuMouseLeave = () => {
+                // Smoothly reset transformations to default state
+                menu.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0)`;
+            };
+
+            menu.addEventListener('mousemove', handleMenuMouseMove);
+            menu.addEventListener('mouseleave', handleMenuMouseLeave);
+        }
+
         // Robust click-away listener inside the capture phase to bypass propagation blocks
         document.addEventListener('mousedown', (e) => {
-            const dockOrbEl = document.getElementById('xz-dock-orb');
-            const clickedOrb = dockOrbEl && dockOrbEl.contains(e.target);
-            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
+            const islandEl = document.getElementById('xz-dock-island');
+            const clickedIsland = islandEl && islandEl.contains(e.target);
+            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedIsland) {
                 closeMenu();
             }
             // Deactivate Alignment Mode if clicked outside XZ body
@@ -2892,9 +2952,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { capture: true });
 
         document.addEventListener('touchstart', (e) => {
-            const dockOrbEl = document.getElementById('xz-dock-orb');
-            const clickedOrb = dockOrbEl && dockOrbEl.contains(e.target);
-            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedOrb) {
+            const islandEl = document.getElementById('xz-dock-island');
+            const clickedIsland = islandEl && islandEl.contains(e.target);
+            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedIsland) {
                 closeMenu();
             }
             // Deactivate Alignment Mode if tapped outside XZ body
@@ -2906,83 +2966,449 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, { capture: true, passive: true });
 
-        // ── XZ Dock Orb click handler ─────────────────────────────────────────────
-        const dockOrb = document.getElementById('xz-dock-orb');
-
-        if (dockOrb) {
-            const handleDockClick = (e) => {
-                if (e) {
-                    e.stopPropagation();
-                    e.preventDefault();
+        // ── XZ Customizable Dock Island Engine ─────────────────────────────────────
+        let islandConfig = ['sound', 'dock', 'chat', 'scroll'];
+        
+        // 1. Inspect URL parameters for ?dock=sound,flight,cart,contact layout override
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dockParam = urlParams.get('dock');
+            if (dockParam) {
+                const parts = dockParam.split(',');
+                if (parts.length === 4) {
+                    const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'contact', 'empty'];
+                    const allValid = parts.every(p => validActions.includes(p));
+                    if (allValid) {
+                        islandConfig = parts;
+                        localStorage.setItem('xz-island-config', JSON.stringify(islandConfig));
+                        // Clean up URL query parameter from address bar
+                        const cleanUrl = window.location.origin + window.location.pathname;
+                        window.history.replaceState({}, document.title, cleanUrl);
+                    }
                 }
-
-                if (isFreeFlightActive) {
-                    // ── Start docking: XZ flies physically to the orb ────────────
-                    isFreeFlightActive    = false;
-                    isDockingInProgress   = true;
-                    isXZAtDock            = false;
-
-                    // Orb turns red immediately to signal docking intent
-                    dockOrb.classList.remove('xz-dock-orb--free');
-                    dockOrb.classList.add('xz-dock-orb--docked');
-
-                    // targetX/Y will be updated every frame in updateMovement()
-
-                } else if (isDockingInProgress) {
-                    // ── Cancel in-progress docking: return to free flight ────────
-                    isDockingInProgress = false;
-                    isFreeFlightActive  = true;
-
-                    dockOrb.classList.remove('xz-dock-orb--docked');
-                    dockOrb.classList.add('xz-dock-orb--free');
-
-                    pickNewTarget();
-
-                } else if (isXZAtDock) {
-                    // ── Undock: release XZ back into free flight ─────────────────
-                    isXZAtDock         = false;
-                    isFreeFlightActive = true;
-
-                    dockOrb.classList.remove('xz-dock-orb--docked');
-                    dockOrb.classList.add('xz-dock-orb--free');
-
-                    // Small natural launch push away from the corner
-                    vx = -1.2 - Math.random() * 0.8;
-                    vy = -(0.8 + Math.random() * 0.8);
-
-                    pickNewTarget();
+            } else {
+                // Otherwise read from localStorage
+                const saved = localStorage.getItem('xz-island-config');
+                if (saved) {
+                    islandConfig = JSON.parse(saved);
                 }
-            };
-
-            dockOrb.addEventListener('click', handleDockClick);
-            dockOrb.addEventListener('touchstart', handleDockClick, { passive: false });
+            }
+        } catch (e) {
+            console.error('Failed to parse island config:', e);
         }
 
-        // ── Sound Orb click handler ───────────────────────────────────────────────
-        const soundOrb = document.getElementById('xz-sound-orb');
+        const islandActions = {
+            sound: {
+                label: 'Lautstärke',
+                icon: (isActive) => isActive 
+                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,
+                action: (e) => {
+                    isSoundEnabled = !isSoundEnabled;
+                    if (!isSoundEnabled) {
+                        stopXzDragSound();
+                    }
+                    renderIsland();
+                },
+                getStatusClass: () => !isSoundEnabled ? 'btn-status-red' : ''
+            },
+            dock: {
+                label: 'XZ Dock',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+                action: (e) => {
+                    if (isFreeFlightActive) {
+                        isFreeFlightActive = false;
+                        isDockingInProgress = true;
+                        isXZAtDock = false;
+                    } else if (isDockingInProgress) {
+                        isDockingInProgress = false;
+                        isFreeFlightActive = true;
+                        pickNewTarget();
+                    } else if (isXZAtDock) {
+                        isXZAtDock = false;
+                        isFreeFlightActive = true;
+                        vx = -1.2 - Math.random() * 0.8;
+                        vy = -(0.8 + Math.random() * 0.8);
+                        pickNewTarget();
+                    }
+                    renderIsland();
+                },
+                getStatusClass: () => (isDockingInProgress || isXZAtDock) ? 'btn-status-red' : ''
+            },
+            flight: {
+                label: 'Flugmodus',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-2-2h-3l-3-4H9l3 4H6l-2-2H2v7l2 2h4l3 4h3l-3-4h3a2 2 0 0 0 2-2z"/></svg>`,
+                action: (e) => {
+                    isFreeFlightActive = !isFreeFlightActive;
+                    if (isFreeFlightActive) {
+                        isXZAtDock = false;
+                        isDockingInProgress = false;
+                        pickNewTarget();
+                    } else {
+                        vx = 0; vy = 0;
+                    }
+                    renderIsland();
+                },
+                getStatusClass: () => !isFreeFlightActive ? 'btn-status-red' : ''
+            },
+            chat: {
+                label: 'Dialog',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+                action: (e) => {
+                    if (isMenuOpen) {
+                        closeMenu();
+                    } else {
+                        openMenu();
+                    }
+                },
+                getStatusClass: () => isMenuOpen ? 'active' : ''
+            },
+            cart: {
+                label: 'Warenkorb',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+                action: (e) => {
+                    toggleCartPanel();
+                },
+                getStatusClass: () => {
+                    const cartPanel = document.getElementById('cart-panel');
+                    return (cartPanel && cartPanel.classList.contains('open')) ? 'active' : '';
+                }
+            },
+            scroll: {
+                label: 'Nach oben',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
+                action: (e) => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                getStatusClass: () => ''
+            },
+            contact: {
+                label: 'Kontakt',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+                action: (e) => {
+                    const contactSection = document.getElementById('contact');
+                    if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                },
+                getStatusClass: () => ''
+            },
+            empty: {
+                label: 'Leer',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+                action: (e) => {
+                    // Empty space
+                },
+                getStatusClass: () => 'btn-empty'
+            }
+        };
 
-        if (soundOrb) {
-            const handleSoundClick = (e) => {
+        const islandContainer = document.getElementById('xz-dock-island');
+        const slots = islandContainer ? islandContainer.querySelectorAll('.xz-island-slot') : [];
+        const editBtn = document.getElementById('xz-island-edit-btn');
+        const selector = document.getElementById('xz-island-selector');
+
+        let isEditingIsland = false;
+        let selectedSlotIndex = null;
+
+        function renderIsland() {
+            if (!islandContainer) return;
+            islandConfig.forEach((key, index) => {
+                const slot = slots[index];
+                if (!slot) return;
+                
+                slot.innerHTML = '';
+                const actDef = islandActions[key] || islandActions.empty;
+                
+                const btn = document.createElement('button');
+                btn.className = `xz-island-btn ${actDef.getStatusClass()}`;
+                btn.setAttribute('aria-label', actDef.label);
+                
+                const activeState = key === 'sound' ? isSoundEnabled : true;
+                btn.innerHTML = actDef.icon(activeState);
+                
+                const triggerAction = (e) => {
+                    if (e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                    
+                    if (isEditingIsland) {
+                        openSelector(index);
+                    } else {
+                        playIslandSound();
+                        actDef.action(e);
+                    }
+                };
+                
+                btn.addEventListener('click', triggerAction);
+                btn.addEventListener('touchstart', triggerAction, { passive: false });
+                
+                slot.appendChild(btn);
+            });
+        }
+
+        window.renderIsland = renderIsland; // Expose globally for drag/snapping events
+
+        if (editBtn) {
+            const toggleEditMode = (e) => {
                 if (e) {
                     e.stopPropagation();
                     e.preventDefault();
                 }
-
-                isSoundEnabled = !isSoundEnabled;
-
-                if (!isSoundEnabled) {
-                    // Muting: immediately fade out any active drag sound
-                    stopXzDragSound();
-                    soundOrb.classList.remove('xz-sound-orb--on');
-                    soundOrb.classList.add('xz-sound-orb--off');
+                playIslandSound();
+                isEditingIsland = !isEditingIsland;
+                if (isEditingIsland) {
+                    islandContainer.classList.add('xz-dock-island--editing');
                 } else {
-                    soundOrb.classList.remove('xz-sound-orb--off');
-                    soundOrb.classList.add('xz-sound-orb--on');
+                    islandContainer.classList.remove('xz-dock-island--editing');
+                    closeSelector();
+                }
+            };
+            editBtn.addEventListener('click', toggleEditMode);
+            editBtn.addEventListener('touchstart', toggleEditMode, { passive: false });
+        }
+
+        function openSelector(slotIndex) {
+            selectedSlotIndex = slotIndex;
+            if (!selector) return;
+            
+            const optionsContainer = selector.querySelector('.xz-selector-options');
+            if (optionsContainer) {
+                optionsContainer.innerHTML = '';
+                
+                Object.keys(islandActions).forEach(key => {
+                    const actDef = islandActions[key];
+                    const opt = document.createElement('div');
+                    opt.className = 'xz-selector-opt';
+                    opt.innerHTML = `
+                        ${actDef.icon(true)}
+                        <span class="xz-selector-opt-label">${actDef.label}</span>
+                    `;
+                    
+                    const selectOption = (e) => {
+                        if (e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                        }
+                        playIslandSound();
+                        islandConfig[selectedSlotIndex] = key;
+                        localStorage.setItem('xz-island-config', JSON.stringify(islandConfig));
+                        renderIsland();
+                        closeSelector();
+                    };
+                    
+                    opt.addEventListener('click', selectOption);
+                    opt.addEventListener('touchstart', selectOption, { passive: false });
+                    
+                    optionsContainer.appendChild(opt);
+                });
+            }
+            
+            selector.classList.add('open');
+        }
+
+        function closeSelector() {
+            if (selector) {
+                selector.classList.remove('open');
+            }
+            selectedSlotIndex = null;
+        }
+
+        // Close selector when clicking away
+        document.addEventListener('mousedown', (e) => {
+            if (selector && selector.classList.contains('open')) {
+                if (!selector.contains(e.target) && !islandContainer.contains(e.target)) {
+                    closeSelector();
+                }
+            }
+        });
+        document.addEventListener('touchstart', (e) => {
+            if (selector && selector.classList.contains('open')) {
+                if (!selector.contains(e.target) && !islandContainer.contains(e.target)) {
+                    closeSelector();
+                }
+            }
+        });
+
+        // Initialize dock island rendering
+        renderIsland();
+
+        // ── Selector Footer Button Event Listeners ──
+        const shareBtn = document.getElementById('xz-island-share-btn');
+        const exportBtn = document.getElementById('xz-island-export-btn');
+        const importBtn = document.getElementById('xz-island-import-btn');
+        const fileInput = document.getElementById('xz-island-file-input');
+        const feedbackEl = document.getElementById('xz-island-feedback');
+
+        function showFeedback(text, isError = false) {
+            if (!feedbackEl) return;
+            feedbackEl.textContent = text;
+            feedbackEl.style.color = isError ? '#ff3333' : '#00d4d4';
+            feedbackEl.style.opacity = '1';
+            setTimeout(() => {
+                feedbackEl.style.opacity = '0';
+            }, 3000);
+        }
+
+        if (shareBtn) {
+            const handleShare = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                playIslandSound();
+                try {
+                    const shareUrl = window.location.origin + window.location.pathname + '?dock=' + islandConfig.join(',');
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        showFeedback('Link kopiert! 👍');
+                    }).catch(err => {
+                        console.error('Clipboard copy failed:', err);
+                        // Fallback manual prompt if clipboard API is blocked
+                        const dummyInput = document.createElement('input');
+                        document.body.appendChild(dummyInput);
+                        dummyInput.value = shareUrl;
+                        dummyInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(dummyInput);
+                        showFeedback('Link kopiert! 👍');
+                    });
+                } catch (err) {
+                    showFeedback('Fehler beim Kopieren! ✕', true);
+                }
+            };
+            shareBtn.addEventListener('click', handleShare);
+            shareBtn.addEventListener('touchstart', handleShare, { passive: false });
+        }
+
+        if (exportBtn) {
+            const handleExport = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                playIslandSound();
+                try {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(islandConfig));
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", "xz_settings.json");
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                    showFeedback('Heruntergeladen! ✓');
+                } catch (err) {
+                    showFeedback('Export fehlgeschlagen! ✕', true);
+                }
+            };
+            exportBtn.addEventListener('click', handleExport);
+            exportBtn.addEventListener('touchstart', handleExport, { passive: false });
+        }
+
+        if (importBtn) {
+            const handleImportClick = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+                playIslandSound();
+                if (fileInput) fileInput.click();
+            };
+            importBtn.addEventListener('click', handleImportClick);
+            importBtn.addEventListener('touchstart', handleImportClick, { passive: false });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const imported = JSON.parse(event.target.result);
+                        if (Array.isArray(imported) && imported.length === 4) {
+                            const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'contact', 'empty'];
+                            const allValid = imported.every(p => validActions.includes(p));
+                            if (allValid) {
+                                islandConfig = imported;
+                                localStorage.setItem('xz-island-config', JSON.stringify(islandConfig));
+                                renderIsland();
+                                showFeedback('Einstellungen geladen! ✓');
+                            } else {
+                                showFeedback('Ungültige Optionen! ✕', true);
+                            }
+                        } else {
+                            showFeedback('Formatfehler! ✕', true);
+                        }
+                    } catch (err) {
+                        showFeedback('Ladefehler! ✕', true);
+                    }
+                    fileInput.value = ''; // Reset file input
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // ── 3D Tilt Hover & Glowing Border Sweep Engine ──
+        if (islandContainer) {
+            let sweepAngle = 0;
+            let isSweepingActive = false;
+            let sweepAnimFrame = null;
+
+            // Silky smooth border sweep animation loop
+            const updateSweep = () => {
+                if (!isSweepingActive) return;
+                sweepAngle = (sweepAngle + 1.2) % 360;
+                islandContainer.style.setProperty('--xz-sweep-angle', `${sweepAngle}deg`);
+                sweepAnimFrame = requestAnimationFrame(updateSweep);
+            };
+
+            // Mouse Move Tilt Calculation (Desktop only, screenWidth >= 1024px)
+            const handleMouseMove = (e) => {
+                if (window.innerWidth < 1024) return; // Avoid on mobile/touch screens
+                
+                const rect = islandContainer.getBoundingClientRect();
+                // Mouse coordinates relative to the island bounding box center
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                // Max tilt angle (degrees)
+                const maxTilt = 10;
+                const tiltX = -(y / (rect.height / 2)) * maxTilt;
+                const tiltY = (x / (rect.width / 2)) * maxTilt;
+
+                islandContainer.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+            };
+
+            const handleMouseEnter = () => {
+                if (window.innerWidth < 1024) return;
+                isSweepingActive = true;
+                if (!sweepAnimFrame) {
+                    updateSweep();
                 }
             };
 
-            soundOrb.addEventListener('click', handleSoundClick);
-            soundOrb.addEventListener('touchstart', handleSoundClick, { passive: false });
+            const handleMouseLeave = () => {
+                // Keep sweeping active for 500ms to allow a smooth visual fade-out in CSS
+                setTimeout(() => {
+                    // Only stop if the user hasn't re-entered the island
+                    if (islandContainer && !islandContainer.matches(':hover')) {
+                        isSweepingActive = false;
+                        if (sweepAnimFrame) {
+                            cancelAnimationFrame(sweepAnimFrame);
+                            sweepAnimFrame = null;
+                        }
+                    }
+                }, 500);
+                
+                // Smoothly reset transformations to default state
+                islandContainer.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`;
+            };
+
+            islandContainer.addEventListener('mousemove', handleMouseMove);
+            islandContainer.addEventListener('mouseenter', handleMouseEnter);
+            islandContainer.addEventListener('mouseleave', handleMouseLeave);
         }
 
         const optionButtons = optionsList.querySelectorAll('.xz-option-btn');
@@ -3004,6 +3430,40 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('touchstart', handleOptionClick, { passive: false });
         });
 
+        // ── Question Search Filter Logic ──
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const groups = optionsList.querySelectorAll('.xz-category-group');
+                
+                groups.forEach(group => {
+                    const buttons = group.querySelectorAll('.xz-option-btn');
+                    let activeButtonsInGroup = 0;
+                    
+                    buttons.forEach(btn => {
+                        const btnText = btn.textContent.toLowerCase();
+                        const qId = btn.getAttribute('data-question');
+                        const answerText = dialogData[qId] ? dialogData[qId].toLowerCase() : '';
+                        
+                        // Match query in either the button label OR the answer content
+                        if (btnText.includes(query) || answerText.includes(query)) {
+                            btn.style.display = 'block';
+                            activeButtonsInGroup++;
+                        } else {
+                            btn.style.display = 'none';
+                        }
+                    });
+                    
+                    // Hide the entire category section (including divider) if no questions match
+                    if (activeButtonsInGroup > 0) {
+                        group.style.display = 'flex';
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            });
+        }
+
         const handleBackClick = (e) => {
             if (e) {
                 e.stopPropagation();
@@ -3011,6 +3471,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             playClickSound();
             backBtn.style.display = 'none';
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            }
             typeText(dialogData.greet, () => {
                 optionsList.style.display = 'flex';
             });
