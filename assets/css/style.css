@@ -3372,6 +3372,9 @@ body.modal-open {
     position: fixed;
     width: 290px;
     max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     background: rgba(10, 10, 10, 0.85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -3389,6 +3392,28 @@ body.modal-open {
     transform-style: preserve-3d;
     perspective: 1000px;
     transition: opacity 0.25s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+.xz-menu-content {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-teal) rgba(0, 0, 0, 0.3);
+}
+
+.xz-menu-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.xz-menu-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.xz-menu-content::-webkit-scrollbar-thumb {
+    background: var(--color-teal);
+    border-radius: 2px;
 }
 
 .xz-companion-menu.open {
@@ -3674,6 +3699,58 @@ body {
     }
 }
 
+.xz-island-bg-arrows {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 1px) scale(0.95);
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1), transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.5s;
+    z-index: 1;
+    overflow: visible;
+}
+
+.xz-island-bg-arrows.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate3d(-50%, -50%, 1px) scale(1);
+}
+
+.xz-island-arrows-svg {
+    overflow: visible;
+    width: 100%;
+    height: 100%;
+}
+
+.xz-island-arrows-text {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    fill: #00d4d4; /* Turquoise/teal arrows */
+    letter-spacing: -0.5px;
+    filter: drop-shadow(0 0 3px rgba(0, 212, 212, 0.95)) drop-shadow(0 0 6px rgba(0, 212, 212, 0.4));
+}
+
+.xz-island-arrows-text textPath {
+    animation: xzRotateTextPath 8s linear infinite;
+    will-change: start-offset, startOffset;
+}
+
+@keyframes xzRotateTextPath {
+    0% {
+        start-offset: 0%;
+        startOffset: 0%;
+    }
+    100% {
+        start-offset: -100%;
+        startOffset: -100%;
+    }
+}
+
 .xz-dock-island {
     position: relative;
     transform: perspective(1000px);
@@ -3815,6 +3892,8 @@ body {
 
 /* Edit Pencil Trigger Button at the end of the Dock */
 .xz-island-edit-btn {
+    position: relative;
+    overflow: visible;
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -3846,16 +3925,16 @@ body {
 
 /* ── Popover Selection Menu ── */
 .xz-island-selector {
-    position: absolute;
-    bottom: 80px;
+    position: fixed;
+    bottom: 104px;
     left: 50%;
-    transform: translateX(-50%) scale(0.9);
+    transform: translate3d(-50%, 10px, 0) scale(0.9);
     width: 280px;
-    background: rgba(8, 12, 12, 0.9);
+    background: rgba(8, 12, 12, 0.95);
     border: 1.5px solid rgba(0, 212, 212, 0.4);
     border-radius: 16px;
     padding: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 212, 212, 0.1);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 212, 212, 0.15);
     z-index: 10010;
     pointer-events: auto;
     opacity: 0;
@@ -3866,7 +3945,7 @@ body {
 .xz-island-selector.open {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) scale(1);
+    transform: translate3d(-50%, 0, 0) scale(1);
 }
 
 .xz-selector-header {
@@ -3955,7 +4034,7 @@ body {
     }
     
     .xz-island-selector {
-        bottom: 70px;
+        bottom: 84px;
         width: 250px;
     }
     
