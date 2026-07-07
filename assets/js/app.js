@@ -2882,7 +2882,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const dockOrb = document.getElementById('xz-dock-orb');
 
         if (dockOrb) {
-            dockOrb.addEventListener('click', () => {
+            const handleDockClick = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
 
                 if (isFreeFlightActive) {
                     // ── Start docking: XZ flies physically to the orb ────────────
@@ -2920,14 +2924,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     pickNewTarget();
                 }
-            });
+            };
+
+            dockOrb.addEventListener('click', handleDockClick);
+            dockOrb.addEventListener('touchstart', handleDockClick, { passive: false });
         }
 
         // ── Sound Orb click handler ───────────────────────────────────────────────
         const soundOrb = document.getElementById('xz-sound-orb');
 
         if (soundOrb) {
-            soundOrb.addEventListener('click', () => {
+            const handleSoundClick = (e) => {
+                if (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                }
+
                 isSoundEnabled = !isSoundEnabled;
 
                 if (!isSoundEnabled) {
@@ -2939,7 +2951,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     soundOrb.classList.remove('xz-sound-orb--off');
                     soundOrb.classList.add('xz-sound-orb--on');
                 }
-            });
+            };
+
+            soundOrb.addEventListener('click', handleSoundClick);
+            soundOrb.addEventListener('touchstart', handleSoundClick, { passive: false });
         }
 
         const optionButtons = optionsList.querySelectorAll('.xz-option-btn');
