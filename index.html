@@ -842,25 +842,56 @@
                 <!-- Outer glowing ring / body -->
                 <circle cx="50" cy="50" r="44" fill="url(#xz-body-grad)" stroke="var(--color-teal)" stroke-width="2.5" />
 
-                <!-- ── Balaclava (full head coverage, mouth covered, eyes open) ── -->
-                <!-- Main balaclava fabric — covers top of head down through chin -->
+                <!-- ── Hoodie, Hair & Mask Face Covering ── -->
                 <g clip-path="url(#xz-body-clip)">
-                    <!-- Top cap / crown: solid dark fabric filling upper half -->
-                    <ellipse cx="50" cy="26" rx="36" ry="28" fill="#161a1a" />
-                    <!-- Side fabric wrapping around the face down to chin -->
-                    <path d="M 14 40 Q 12 60 14 78 Q 20 88 50 90 Q 80 88 86 78 Q 88 60 86 40 Q 80 30 50 28 Q 20 30 14 40 Z"
-                          fill="#141818" />
-                    <!-- Eye slit — open gap in the balaclava fabric (left + right eye exposed) -->
-                    <!-- Rendered as a recessed darker area so fabric framing eyes is visible -->
-                    <rect x="24" y="28" width="52" height="22" rx="4" fill="#0c0e0e" />
-                    <!-- Subtle fabric texture seam above eye slit -->
-                    <path d="M 26 28 Q 50 26 74 28" stroke="#222828" stroke-width="1" fill="none" />
-                    <!-- Mouth-cover fabric panel — slightly lighter fabric across mouth area -->
-                    <rect x="28" y="58" width="44" height="24" rx="6" fill="#1a1e1e" />
-                    <!-- Subtle stitching line on mouth panel -->
-                    <path d="M 34 69 Q 50 72 66 69" stroke="#252b2b" stroke-width="1" fill="none" stroke-dasharray="3,2" />
-                    <!-- Chin seam / fold -->
-                    <path d="M 28 82 Q 50 88 72 82" stroke="#202626" stroke-width="1.2" fill="none" />
+                    <!-- 1. Full circle base of hoodie fabric (Black-Grey) -->
+                    <circle cx="50" cy="50" r="43" fill="#141818" />
+                    
+                    <!-- 2. Dark inner shadow cavity of the hood (deep background where face sits) -->
+                    <path d="M 24 38 Q 20 54 24 70 Q 32 80 50 82 Q 68 80 76 70 Q 80 54 76 38 Q 68 22 50 22 Q 32 22 24 38 Z" fill="#070909" />
+                    
+                    <!-- Inner hood edge highlight / rim contour -->
+                    <path d="M 24 38 Q 20 54 24 70 Q 32 80 50 82 Q 68 80 76 70 Q 80 54 76 38 Q 68 22 50 22 Q 32 22 24 38 Z" stroke="#2c3636" stroke-width="1.8" fill="none" opacity="0.8" />
+
+                    <!-- 3. Messy Hair strands wisping from top hood rim onto the forehead -->
+                    <g fill="#4e3b2b" stroke="#2b1f14" stroke-width="0.8">
+                        <!-- Under-layer hair shadow masses -->
+                        <path d="M 30 23 C 32 30, 36 34, 38 31 C 36 27, 34 23, 30 23 Z" />
+                        <path d="M 36 22 C 40 31, 44 33, 46 29 C 42 25, 40 22, 36 22 Z" />
+                        <path d="M 44 22 C 48 32, 52 32, 54 28 C 50 24, 48 22, 44 22 Z" />
+                        <path d="M 52 22 C 56 31, 60 33, 62 29 C 58 25, 56 22, 52 22 Z" />
+                        <path d="M 58 23 C 62 30, 66 33, 68 30 C 64 26, 62 23, 58 23 Z" />
+                        
+                        <!-- Middle hair layer with midtone brown -->
+                        <path d="M 26 23 C 30 35, 34 38, 37 34 C 33 28, 30 23, 26 23 Z" fill="#6e533c" />
+                        <path d="M 33 22 C 38 36, 42 39, 44 35 C 40 28, 36 22, 33 22 Z" fill="#6e533c" />
+                        <path d="M 40 21 C 45 37, 48 39, 51 34 C 47 28, 44 21, 40 21 Z" fill="#6e533c" />
+                        <path d="M 47 21 C 52 37, 55 39, 58 34 C 54 28, 51 21, 47 21 Z" fill="#6e533c" />
+                        <path d="M 54 22 C 58 36, 62 39, 64 35 C 60 28, 57 22, 54 22 Z" fill="#6e533c" />
+                        <path d="M 61 23 C 65 35, 68 37, 71 33 C 67 27, 64 23, 61 23 Z" fill="#6e533c" />
+                        
+                        <!-- Top highlighted strands for texture -->
+                        <path d="M 29 23 C 32 32, 33 34, 35 32 C 33 28, 31 23, 29 23 Z" fill="#8c6c50" />
+                        <path d="M 42 22 C 45 34, 46 36, 48 34 C 46 30, 44 22, 42 22 Z" fill="#8c6c50" />
+                        <path d="M 50 22 C 53 34, 54 36, 56 34 C 54 30, 52 22, 50 22 Z" fill="#8c6c50" />
+                        <path d="M 59 23 C 62 32, 63 34, 65 32 C 63 28, 61 23, 59 23 Z" fill="#8c6c50" />
+                    </g>
+
+                    <!-- 4. Neck Gaiter fabric mask covering nose & mouth -->
+                    <!-- Top bridge starts around y=54, arches to y=49 at center nose -->
+                    <path d="M 21 54 Q 35 48 50 49 Q 65 48 79 54 L 81 78 Q 72 88 50 89 Q 28 88 19 78 Z" fill="#181d1d" />
+                    
+                    <!-- Decorative mask top stitching/glowing wire (subtle tech look) -->
+                    <path d="M 21 54 Q 35 48 50 49 Q 65 48 79 54" stroke="#00d4d4" stroke-width="1.2" stroke-opacity="0.55" fill="none" />
+                    
+                    <!-- Detailed fabric drape lines / folds -->
+                    <path d="M 23 62 Q 50 66 77 62" stroke="#252e2e" stroke-width="1.5" fill="none" />
+                    <path d="M 26 70 Q 50 75 74 70" stroke="#202828" stroke-width="1.5" fill="none" />
+                    <path d="M 30 78 Q 50 83 70 78" stroke="#1b2121" stroke-width="1.2" fill="none" />
+                    
+                    <!-- Techwear brand circle patch on the side of the mask -->
+                    <circle cx="34" cy="68" r="3" fill="none" stroke="rgba(0, 212, 212, 0.4)" stroke-width="0.8" />
+                    <path d="M 34 65 L 34 71 M 31 68 L 37 68" stroke="rgba(0, 212, 212, 0.4)" stroke-width="0.6" />
                 </g>
 
                 <!-- LED Eyes Group (for gaze tracking) -->
@@ -933,6 +964,27 @@
         <!-- XZ Customizable Dock Island Wrapper -->
         <div class="xz-dock-island-wrapper">
             <div id="xz-dock-island" class="xz-dock-island">
+                <!-- Floating Rotating Arrows Around Island (Edit Mode indicator) -->
+                <div class="xz-island-bg-arrows" id="xz-island-bg-arrows">
+                    <svg class="xz-island-arrows-svg" width="100%" height="100%">
+                        <path id="xz-island-path" fill="none" stroke="none" />
+                        <text class="xz-island-arrows-text" filter="url(#xz-arrow-glow)">
+                            <textPath href="#xz-island-path" startOffset="0%">
+                                <tspan opacity="0.05">━</tspan><tspan opacity="0.2">━</tspan><tspan opacity="0.4">━</tspan><tspan opacity="0.6">━</tspan><tspan opacity="0.8">━</tspan><tspan opacity="1">━</tspan><tspan opacity="1">➤</tspan>              <tspan opacity="0.05">━</tspan><tspan opacity="0.2">━</tspan><tspan opacity="0.4">━</tspan><tspan opacity="0.6">━</tspan><tspan opacity="0.8">━</tspan><tspan opacity="1">━</tspan><tspan opacity="1">➤</tspan>              <tspan opacity="0.05">━</tspan><tspan opacity="0.2">━</tspan><tspan opacity="0.4">━</tspan><tspan opacity="0.6">━</tspan><tspan opacity="0.8">━</tspan><tspan opacity="1">━</tspan><tspan opacity="1">➤</tspan>              <tspan opacity="0.05">━</tspan><tspan opacity="0.2">━</tspan><tspan opacity="0.4">━</tspan><tspan opacity="0.6">━</tspan><tspan opacity="0.8">━</tspan><tspan opacity="1">━</tspan><tspan opacity="1">➤</tspan>               
+                            </textPath>
+                        </text>
+                        
+                        <defs>
+                            <filter id="xz-arrow-glow">
+                                <feGaussianBlur stdDeviation="1.5" result="blur" />
+                                <feMerge>
+                                    <feMergeNode in="blur" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                        </defs>
+                    </svg>
+                </div>
                 <!-- 4 Quick Action Slots -->
                 <div class="xz-island-slot" data-slot="0"></div>
                 <div class="xz-island-slot" data-slot="1"></div>

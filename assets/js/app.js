@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && clickBuffer) {
-            playBuffer(clickBuffer, 1.19);  // +3.5 dB total
+            playBuffer(clickBuffer, 1.89);  // +7.5 dB total (+4 dB adjustment)
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (clickAudioFallback) {
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playExitSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 1.19);   // +3.5 dB total
+            playBuffer(exitBuffer, 1.89);   // +7.5 dB total (+4 dB adjustment)
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (exitAudioFallback) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzClickBuffer) {
-            playBuffer(xzClickBuffer, 1.07);  // +5.0 dB total
+            playBuffer(xzClickBuffer, 1.70);  // +9.0 dB total (+4 dB adjustment)
         } else {
             if (xzClickAudioFallback) {
                 xzClickAudioFallback.currentTime = 0;
@@ -205,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Start volume at 0 for smooth fade-in
                 gainNode.gain.setValueAtTime(0, currentTime);
-                // Linear ramp to full volume over 1.0 seconds (+5.0 dB total: 0.85 → 1.51)
-                gainNode.gain.linearRampToValueAtTime(1.51, currentTime + 1.0);
+                // Linear ramp to full volume over 1.0 seconds (+9.0 dB total: 0.85 → 2.39, +4 dB adjustment)
+                gainNode.gain.linearRampToValueAtTime(2.39, currentTime + 1.0);
                 
                 source.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 xzDragGainNode.gain.cancelScheduledValues(currentTime);
                 // Determine starting gain: use current instantaneous value (clamped to max 0.85)
                 let startGain = xzDragGainNode.gain.value;
-                if (startGain > 1.51) startGain = 1.51;  // clamp to new drag max
+                if (startGain > 2.39) startGain = 2.39;  // clamp to new drag max (+4 dB adjustment)
                 if (startGain < 0) startGain = 0;
                 // Start linear fade-out to 0 over 1 second
                 xzDragGainNode.gain.setValueAtTime(startGain, currentTime);
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzCloseSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzCloseBuffer) {
-            playBuffer(xzCloseBuffer, 1.51, false, 0.01);  // +5.0 dB total, skip first 10ms (0.01s)
+            playBuffer(xzCloseBuffer, 2.39, false, 0.01);  // +9.0 dB total (+4 dB adjustment), skip first 10ms (0.01s)
         } else {
             if (xzCloseAudioFallback) {
                 xzCloseAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzOutSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 1.51, false, 0.01);  // +5.0 dB total, skip first 10ms (0.01s)
+            playBuffer(exitBuffer, 2.39, false, 0.01);  // +9.0 dB total (+4 dB adjustment), skip first 10ms (0.01s)
         } else {
             if (exitAudioFallback) {
                 exitAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playIslandSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && islandBuffer) {
-            playBuffer(islandBuffer, 1.0);
+            playBuffer(islandBuffer, 1.58); // +4 dB adjustment
         } else {
             if (islandAudioFallback) {
                 islandAudioFallback.currentTime = 0;
@@ -1745,15 +1745,18 @@ document.addEventListener('DOMContentLoaded', () => {
             impressumModal.classList.add('open');
         });
     }
-    if (closeImpressumModal) {
+    if (closeImpressumModal && impressumModal) {
         closeImpressumModal.addEventListener('click', () => {
             impressumModal.classList.remove('open');
         });
     }
     if (impressumModal) {
-        impressumModal.querySelector('.modal-overlay').addEventListener('click', () => {
-            impressumModal.classList.remove('open');
-        });
+        const overlay = impressumModal.querySelector('.modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                impressumModal.classList.remove('open');
+            });
+        }
     }
 
     if (datenschutzLink && datenschutzModal) {
@@ -1762,15 +1765,18 @@ document.addEventListener('DOMContentLoaded', () => {
             datenschutzModal.classList.add('open');
         });
     }
-    if (closeDatenschutzModal) {
+    if (closeDatenschutzModal && datenschutzModal) {
         closeDatenschutzModal.addEventListener('click', () => {
             datenschutzModal.classList.remove('open');
         });
     }
     if (datenschutzModal) {
-        datenschutzModal.querySelector('.modal-overlay').addEventListener('click', () => {
-            datenschutzModal.classList.remove('open');
-        });
+        const overlay = datenschutzModal.querySelector('.modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                datenschutzModal.classList.remove('open');
+            });
+        }
     }
 
     if (shopInfoLink && shopInfoModal) {
@@ -1779,15 +1785,18 @@ document.addEventListener('DOMContentLoaded', () => {
             shopInfoModal.classList.add('open');
         });
     }
-    if (closeShopInfoModal) {
+    if (closeShopInfoModal && shopInfoModal) {
         closeShopInfoModal.addEventListener('click', () => {
             shopInfoModal.classList.remove('open');
         });
     }
     if (shopInfoModal) {
-        shopInfoModal.querySelector('.modal-overlay').addEventListener('click', () => {
-            shopInfoModal.classList.remove('open');
-        });
+        const overlay = shopInfoModal.querySelector('.modal-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                shopInfoModal.classList.remove('open');
+            });
+        }
     }
 
     document.addEventListener('keydown', (e) => {
@@ -1974,8 +1983,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         setInterval(updateAvoidRects, 1000);
-        window.addEventListener('resize', updateAvoidRects);
-        window.addEventListener('scroll', updateAvoidRects);
+        
+        let avoidRectsTimeout = null;
+        function throttledUpdateAvoidRects() {
+            if (!avoidRectsTimeout) {
+                avoidRectsTimeout = setTimeout(() => {
+                    updateAvoidRects();
+                    avoidRectsTimeout = null;
+                }, 150);
+            }
+        }
+        window.addEventListener('resize', throttledUpdateAvoidRects);
+        window.addEventListener('scroll', throttledUpdateAvoidRects);
 
         const sectors = [
             { name: 'top-left', minX: 60, maxX: 0.35, minY: 100, maxY: 0.35 },
@@ -2693,8 +2712,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function positionMenu() {
-            const menuWidth = 290;
-            const menuHeight = 350;
+            const menuWidth = menu.offsetWidth || 290;
+            const menuHeight = menu.offsetHeight || 350;
             
             const cw = document.documentElement.clientWidth;
             const ch = document.documentElement.clientHeight;
@@ -3111,6 +3130,53 @@ document.addEventListener('DOMContentLoaded', () => {
         let isEditingIsland = false;
         let selectedSlotIndex = null;
 
+        function updateIslandArrows() {
+            const bgArrows = document.getElementById('xz-island-bg-arrows');
+            if (!bgArrows || !islandContainer) return;
+            
+            if (!isEditingIsland) {
+                bgArrows.classList.remove('active');
+                return;
+            }
+            
+            const rect = islandContainer.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+                requestAnimationFrame(updateIslandArrows);
+                return;
+            }
+            
+            const pad = 2.5; // Concentric spacing: 1.5px outside island border
+            const W = rect.width + pad * 2;
+            const H = rect.height + pad * 2;
+            const R = H / 2;
+            
+            bgArrows.style.width = `${W}px`;
+            bgArrows.style.height = `${H}px`;
+            
+            const d = `M ${R},1 L ${W - R},1 A ${R - 1},${R - 1} 0 0 1 ${W - 1},${R} L ${W - 1},${H - R} A ${R - 1},${R - 1} 0 0 1 ${W - R},${H - 1} L ${R},${H - 1} A ${R - 1},${R - 1} 0 0 1 1,${H - R} L 1,${R} A ${R - 1},${R - 1} 0 0 1 ${R},1 Z`;
+            
+            const pathEl = bgArrows.querySelector('#xz-island-path');
+            if (pathEl) {
+                pathEl.setAttribute('d', d);
+                
+                // Get path length to stretch the text exactly along it
+                const L = pathEl.getTotalLength();
+                const textEl = bgArrows.querySelector('.xz-island-arrows-text');
+                if (textEl && L > 0) {
+                    textEl.setAttribute('textLength', L * 2);
+                    textEl.setAttribute('lengthAdjust', 'spacing');
+                }
+            }
+            
+            bgArrows.classList.add('active');
+        }
+
+        window.addEventListener('resize', () => {
+            if (isEditingIsland) {
+                updateIslandArrows();
+            }
+        });
+
         function renderIsland() {
             if (!islandContainer) return;
             islandConfig.forEach((key, index) => {
@@ -3146,6 +3212,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 slot.appendChild(btn);
             });
+            
+            if (isEditingIsland) {
+                setTimeout(updateIslandArrows, 30);
+            }
         }
 
         window.renderIsland = renderIsland; // Expose globally for drag/snapping events
@@ -3160,8 +3230,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 isEditingIsland = !isEditingIsland;
                 if (isEditingIsland) {
                     islandContainer.classList.add('xz-dock-island--editing');
+                    setTimeout(updateIslandArrows, 30);
                 } else {
                     islandContainer.classList.remove('xz-dock-island--editing');
+                    updateIslandArrows();
                     closeSelector();
                 }
             };
