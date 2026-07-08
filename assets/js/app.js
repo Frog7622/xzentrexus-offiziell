@@ -56,28 +56,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Instantiate fallback HTML5 Audio elements immediately for aggressive browser caching
     const clickAudioFallback = new Audio('assets/music/click.wav');
-    clickAudioFallback.volume = 1.0;  // +2 dB
+    clickAudioFallback.volume = 0.63;  // -4 dB Peak
     clickAudioFallback.preload = 'auto';
 
     const exitAudioFallback = new Audio('assets/music/exit.wav');
-    exitAudioFallback.volume = 1.0;   // +2 dB
+    exitAudioFallback.volume = 0.63;   // -4 dB Peak
     exitAudioFallback.preload = 'auto';
 
     // XZ Companion Audio Fallbacks
     const xzClickAudioFallback = new Audio('assets/music/xz_click.wav');
-    xzClickAudioFallback.volume = 1.0;   // +5.0 dB total (HTML5 max 1.0)
+    xzClickAudioFallback.volume = 0.63;   // -4 dB Peak
     xzClickAudioFallback.preload = 'auto';
 
     const xzDragAudioFallback = new Audio('assets/music/xz_drag.wav');
-    xzDragAudioFallback.volume = 1.0;    // +3.5 dB (HTML5 max 1.0)
+    xzDragAudioFallback.volume = 0.63;    // -4 dB Peak
     xzDragAudioFallback.preload = 'auto';
 
     const xzCloseAudioFallback = new Audio('assets/music/xz_close.wav');
-    xzCloseAudioFallback.volume = 1.0;   // +3.5 dB (HTML5 max 1.0)
+    xzCloseAudioFallback.volume = 0.63;   // -4 dB Peak
     xzCloseAudioFallback.preload = 'auto';
 
     const islandAudioFallback = new Audio('assets/music/island.wav');
-    islandAudioFallback.volume = 1.0;
+    islandAudioFallback.volume = 0.63;    // -4 dB Peak
     islandAudioFallback.preload = 'auto';
 
     if (AudioContextClass) {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && clickBuffer) {
-            playBuffer(clickBuffer, 1.89);  // +7.5 dB total (+4 dB adjustment)
+            playBuffer(clickBuffer, 0.63);  // -4 dB Peak
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (clickAudioFallback) {
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playExitSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 1.89);   // +7.5 dB total (+4 dB adjustment)
+            playBuffer(exitBuffer, 0.63);   // -4 dB Peak
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (exitAudioFallback) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzClickBuffer) {
-            playBuffer(xzClickBuffer, 1.70);  // +9.0 dB total (+4 dB adjustment)
+            playBuffer(xzClickBuffer, 0.63);  // -4 dB Peak
         } else {
             if (xzClickAudioFallback) {
                 xzClickAudioFallback.currentTime = 0;
@@ -205,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Start volume at 0 for smooth fade-in
                 gainNode.gain.setValueAtTime(0, currentTime);
-                // Linear ramp to full volume over 1.0 seconds (+9.0 dB total: 0.85 → 2.39, +4 dB adjustment)
-                gainNode.gain.linearRampToValueAtTime(2.39, currentTime + 1.0);
+                // Linear ramp to full volume over 1.0 seconds (-4 dB Peak)
+                gainNode.gain.linearRampToValueAtTime(0.63, currentTime + 1.0);
                 
                 source.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
@@ -253,9 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentTime = audioCtx.currentTime;
                 // Cancel any pending ramps (like the fade-in)
                 xzDragGainNode.gain.cancelScheduledValues(currentTime);
-                // Determine starting gain: use current instantaneous value (clamped to max 0.85)
+                // Determine starting gain: use current instantaneous value (clamped to max 0.63)
                 let startGain = xzDragGainNode.gain.value;
-                if (startGain > 2.39) startGain = 2.39;  // clamp to new drag max (+4 dB adjustment)
+                if (startGain > 0.63) startGain = 0.63;  // clamp to new drag max (-4 dB Peak)
                 if (startGain < 0) startGain = 0;
                 // Start linear fade-out to 0 over 1 second
                 xzDragGainNode.gain.setValueAtTime(startGain, currentTime);
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzCloseSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzCloseBuffer) {
-            playBuffer(xzCloseBuffer, 2.39, false, 0.01);  // +9.0 dB total (+4 dB adjustment), skip first 10ms (0.01s)
+            playBuffer(xzCloseBuffer, 0.63, false, 0.01);  // -4 dB Peak, skip first 10ms (0.01s)
         } else {
             if (xzCloseAudioFallback) {
                 xzCloseAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzOutSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 2.39, false, 0.01);  // +9.0 dB total (+4 dB adjustment), skip first 10ms (0.01s)
+            playBuffer(exitBuffer, 0.63, false, 0.01);  // -4 dB Peak, skip first 10ms (0.01s)
         } else {
             if (exitAudioFallback) {
                 exitAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playIslandSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && islandBuffer) {
-            playBuffer(islandBuffer, 1.58); // +4 dB adjustment
+            playBuffer(islandBuffer, 0.63); // -4 dB Peak
         } else {
             if (islandAudioFallback) {
                 islandAudioFallback.currentTime = 0;
@@ -347,67 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
             audioCtx.resume().then(() => {
                 console.log('AudioContext successfully unlocked on user interaction.');
             });
-        }
-        
-        // 2. Play and immediately pause fallbacks to unlock them for future programmatic playback
-        if (clickAudioFallback) {
-            const origVol = clickAudioFallback.volume;
-            clickAudioFallback.volume = 0;
-            clickAudioFallback.play().then(() => {
-                clickAudioFallback.pause();
-                clickAudioFallback.volume = origVol;
-                clickAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock click fallback failed:', e));
-        }
-        
-        if (exitAudioFallback) {
-            const origVol = exitAudioFallback.volume;
-            exitAudioFallback.volume = 0;
-            exitAudioFallback.play().then(() => {
-                exitAudioFallback.pause();
-                exitAudioFallback.volume = origVol;
-                exitAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock exit fallback failed:', e));
-        }
-
-        if (xzClickAudioFallback) {
-            const origVol = xzClickAudioFallback.volume;
-            xzClickAudioFallback.volume = 0;
-            xzClickAudioFallback.play().then(() => {
-                xzClickAudioFallback.pause();
-                xzClickAudioFallback.volume = origVol;
-                xzClickAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock xzClick fallback failed:', e));
-        }
-
-        if (xzDragAudioFallback) {
-            const origVol = xzDragAudioFallback.volume;
-            xzDragAudioFallback.volume = 0;
-            xzDragAudioFallback.play().then(() => {
-                xzDragAudioFallback.pause();
-                xzDragAudioFallback.volume = origVol;
-                xzDragAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock xzDrag fallback failed:', e));
-        }
-
-        if (xzCloseAudioFallback) {
-            const origVol = xzCloseAudioFallback.volume;
-            xzCloseAudioFallback.volume = 0;
-            xzCloseAudioFallback.play().then(() => {
-                xzCloseAudioFallback.pause();
-                xzCloseAudioFallback.volume = origVol;
-                xzCloseAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock xzClose fallback failed:', e));
-        }
-
-        if (islandAudioFallback) {
-            const origVol = islandAudioFallback.volume;
-            islandAudioFallback.volume = 0;
-            islandAudioFallback.play().then(() => {
-                islandAudioFallback.pause();
-                islandAudioFallback.volume = origVol;
-                islandAudioFallback.currentTime = 0;
-            }).catch(e => console.log('Unlock island fallback failed:', e));
         }
         
         audioUnlocked = true;
@@ -429,8 +368,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (hasOpenModal || isCartOpen || isMenuOpen) {
             document.body.classList.add('modal-open');
+            document.documentElement.classList.add('modal-open');
         } else {
             document.body.classList.remove('modal-open');
+            document.documentElement.remove('modal-open');
         }
     }
 
@@ -2071,7 +2012,9 @@ document.addEventListener('DOMContentLoaded', () => {
             hasDragged = false;
             body.classList.add('state-dragging');
             closeMenu(true); // close silently so close sound doesn't conflict
+            stopCurrentAnimation(); // Stop any active custom animation on drag
             isDockingInProgress = false; // Cancel docking if dragged manually
+            isFreeFlightActive = true; // Return to free flight mode if drag cancels dock
             if (typeof renderIsland === 'function') renderIsland();
 
             if (eyesNormal) eyesNormal.style.display = 'none';
@@ -2168,9 +2111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     tapTimeout = setTimeout(() => {
                         if (!isAlignmentMode) {
-                            if (isMenuOpen) {
-                                closeMenu();
-                            } else {
+                            if (!isMenuOpen) {
                                 openMenu();
                             }
                         }
@@ -2507,14 +2448,16 @@ document.addEventListener('DOMContentLoaded', () => {
             vx += steerX * STEERING_FORCE;
             vy += steerY * STEERING_FORCE;
 
-            for (let rect of avoidRects) {
-                const dx = x - rect.cx;
-                const dy = y - rect.cy;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < AVOID_RADIUS && dist > 0) {
-                    const force = (1 - dist / AVOID_RADIUS) * AVOID_FORCE;
-                    vx += (dx / dist) * force;
-                    vy += (dy / dist) * force;
+            if (isFreeFlightActive) {
+                for (let rect of avoidRects) {
+                    const dx = x - rect.cx;
+                    const dy = y - rect.cy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < AVOID_RADIUS && dist > 0) {
+                        const force = (1 - dist / AVOID_RADIUS) * AVOID_FORCE;
+                        vx += (dx / dist) * force;
+                        vy += (dy / dist) * force;
+                    }
                 }
             }
 
@@ -2592,6 +2535,26 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (chosen === 'SINGING') {
                 runSingingAnimation();
             }
+        }
+
+        function stopCurrentAnimation() {
+            if (customAnimEndTimer) {
+                clearTimeout(customAnimEndTimer);
+                customAnimEndTimer = null;
+            }
+            if (singingNoteInterval) {
+                clearInterval(singingNoteInterval);
+                singingNoteInterval = null;
+            }
+            if (assetBrain) assetBrain.style.display = 'none';
+            if (assetCar) assetCar.style.display = 'none';
+            body.classList.remove('state-car-ride');
+            if (droneSvg) {
+                droneSvg.style.transform = '';
+                droneSvg.style.animation = '';
+            }
+            currentAnimation = 'IDLE';
+            isAnimating = false;
         }
 
         function runBrainAnimation() {
@@ -2808,9 +2771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (isMenuOpen) {
-                closeMenu();
-            } else {
+            if (!isMenuOpen) {
                 openMenu();
             }
         });
@@ -2956,11 +2917,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Robust click-away listener inside the capture phase to bypass propagation blocks
         document.addEventListener('mousedown', (e) => {
-            const islandEl = document.getElementById('xz-dock-island');
-            const clickedIsland = islandEl && islandEl.contains(e.target);
-            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedIsland) {
-                closeMenu();
-            }
             // Deactivate Alignment Mode if clicked outside XZ body
             if (isAlignmentMode && !body.contains(e.target)) {
                 isAlignmentMode = false;
@@ -2971,11 +2927,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { capture: true });
 
         document.addEventListener('touchstart', (e) => {
-            const islandEl = document.getElementById('xz-dock-island');
-            const clickedIsland = islandEl && islandEl.contains(e.target);
-            if (isMenuOpen && !menu.contains(e.target) && !body.contains(e.target) && !clickedIsland) {
-                closeMenu();
-            }
             // Deactivate Alignment Mode if tapped outside XZ body
             if (isAlignmentMode && !body.contains(e.target)) {
                 isAlignmentMode = false;
@@ -3036,6 +2987,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
                 action: (e) => {
                     if (isFreeFlightActive) {
+                        stopCurrentAnimation(); // Cancel active custom animations on docking
                         isFreeFlightActive = false;
                         isDockingInProgress = true;
                         isXZAtDock = false;
@@ -3074,9 +3026,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 label: 'Dialog',
                 icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
                 action: (e) => {
-                    if (isMenuOpen) {
-                        closeMenu();
-                    } else {
+                    if (!isMenuOpen) {
                         openMenu();
                     }
                 },

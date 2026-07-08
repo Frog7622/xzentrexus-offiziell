@@ -3178,8 +3178,18 @@ html, body {
 }
 
 /* Prevent background scrolling when modal or menu is open */
-body.modal-open {
+body.modal-open, html.modal-open {
     overflow: hidden !important;
+    height: 100vh !important;
+    overscroll-behavior: contain !important;
+}
+
+.modal, .modal-overlay, .cart-panel-overlay, .xz-companion-menu {
+    touch-action: none !important;
+}
+
+.modal-content, .cart-panel, .cart-items-container {
+    overscroll-behavior: contain !important;
 }
 
 /* Prevent iOS Safari auto-zoom on form field focus inside modals */
