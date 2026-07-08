@@ -368,10 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (hasOpenModal || isCartOpen || isMenuOpen) {
             document.body.classList.add('modal-open');
-            document.documentElement.classList.add('modal-open');
         } else {
             document.body.classList.remove('modal-open');
-            document.documentElement.remove('modal-open');
         }
     }
 
