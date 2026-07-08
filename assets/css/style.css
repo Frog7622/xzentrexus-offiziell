@@ -504,10 +504,10 @@ button, input, textarea {
     letter-spacing: 0.15em;
     text-indent: 0.15em;
     margin: 0 0 1rem 0;
-    background: linear-gradient(180deg, #FFFFFF 0%, #B3B3B3 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #d5f7f7 35%, #00d4d4 70%, #ffffff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: none;
+    filter: drop-shadow(0 0 8px rgba(0, 212, 212, 0.3));
     
     /* Layout */
     display: inline-block;
@@ -784,14 +784,62 @@ button, input, textarea {
     box-shadow: var(--shadow-glass);
     overflow: hidden;
     position: relative;
-    transition: border-color 0.6s ease, box-shadow 0.6s ease;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), border-color 0.4s ease, box-shadow 0.4s ease;
+    animation: oldReleaseCardIdle 7s ease-in-out infinite;
+    will-change: transform;
+}
+
+.old-release-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 212, 212, 0.02) 60%, rgba(0, 212, 212, 0.1) 100%);
+    pointer-events: none;
+    z-index: 6;
+    transition: background 0.5s ease;
+    border-radius: var(--border-radius);
+}
+
+.old-release-card:hover::after {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 30%, rgba(0, 212, 212, 0.04) 50%, rgba(0, 212, 212, 0.16) 100%);
+}
+
+.old-release-card:hover {
+    animation: oldReleasePlasmaPulse 2s infinite ease-in-out;
+    border-color: rgba(0, 212, 212, 0.7) !important;
+    transition: transform 0.15s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .old-release-card.in-view {
     border-color: rgba(0, 212, 212, 0.25);
-    box-shadow: 
-        var(--shadow-glass),
-        0 0 25px rgba(0, 212, 212, 0.1);
+}
+
+@keyframes oldReleaseCardIdle {
+    0%, 100% {
+        translate: 0 0px;
+        rotate: 0deg;
+        box-shadow: var(--shadow-glass), 0 0 15px rgba(0, 212, 212, 0.15);
+        border-color: rgba(0, 212, 212, 0.15);
+    }
+    50% {
+        translate: 0 -8px;
+        rotate: -0.2deg;
+        box-shadow: var(--shadow-glass), 0 0 25px rgba(0, 212, 212, 0.3);
+        border-color: rgba(0, 212, 212, 0.35);
+    }
+}
+
+@keyframes oldReleasePlasmaPulse {
+    0% {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 212, 0.4), 0 0 40px rgba(0, 212, 212, 0.2);
+    }
+    50% {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 35px rgba(0, 212, 212, 0.7), 0 0 60px rgba(0, 212, 212, 0.4);
+    }
+    100% {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 212, 0.4), 0 0 40px rgba(0, 212, 212, 0.2);
+    }
 }
 
 .old-release-card::before {
@@ -1208,7 +1256,7 @@ button, input, textarea {
     box-shadow: var(--shadow-glass);
     margin-bottom: 1.5rem;
     width: 100%;
-    aspect-ratio: 4/3;
+    aspect-ratio: 1/1;
 }
 
 .product-slider {
@@ -1580,21 +1628,81 @@ button, input, textarea {
 .portfolio-grid {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 1.5rem;
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
 }
 
 .portfolio-item {
     position: relative;
-    aspect-ratio: 4/3;
+    aspect-ratio: 1/1;
     border-radius: var(--border-radius);
     overflow: hidden;
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     width: 100%;
     max-width: 480px;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    animation: portfolioItemIdle 6s ease-in-out infinite;
+    will-change: transform;
+}
+
+.portfolio-item:nth-child(2) {
+    animation-duration: 7s;
+    animation-delay: -1.5s;
+}
+
+/* Glass shine reflection overlay */
+.portfolio-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.03) 40%, rgba(0, 212, 212, 0.02) 60%, rgba(0, 212, 212, 0.12) 100%);
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.5s ease, background 0.5s ease;
+    border-radius: var(--border-radius);
+}
+
+.portfolio-item:hover::after {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 30%, rgba(0, 212, 212, 0.05) 50%, rgba(0, 212, 212, 0.2) 100%);
+}
+
+.portfolio-item:hover {
+    animation: portfolioPlasmaPulse 2s infinite ease-in-out;
+    border-color: rgba(0, 212, 212, 0.7) !important;
+    transition: transform 0.15s ease-out, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes portfolioPlasmaPulse {
+    0% {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 212, 0.4), 0 0 40px rgba(0, 212, 212, 0.2);
+    }
+    50% {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 35px rgba(0, 212, 212, 0.7), 0 0 60px rgba(0, 212, 212, 0.4);
+    }
+    100% {
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 212, 0.4), 0 0 40px rgba(0, 212, 212, 0.2);
+    }
+}
+
+@keyframes portfolioItemIdle {
+    0%, 100% {
+        translate: 0 0px;
+        rotate: 0deg;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 12px rgba(0, 212, 212, 0.15);
+        border-color: rgba(0, 212, 212, 0.15);
+    }
+    50% {
+        translate: 0 -7px;
+        rotate: 0.4deg;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 212, 0.3);
+        border-color: rgba(0, 212, 212, 0.35);
+    }
 }
 
 .portfolio-img {
@@ -2482,6 +2590,18 @@ button, input, textarea {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes glowText {
+    0% {
+        filter: drop-shadow(0 0 8px rgba(0, 212, 212, 0.3)) drop-shadow(0 0 20px rgba(0, 212, 212, 0.15));
+    }
+    50% {
+        filter: drop-shadow(0 0 18px rgba(0, 212, 212, 0.65)) drop-shadow(0 0 35px rgba(0, 212, 212, 0.35));
+    }
+    100% {
+        filter: drop-shadow(0 0 8px rgba(0, 212, 212, 0.3)) drop-shadow(0 0 20px rgba(0, 212, 212, 0.15));
     }
 }
 
@@ -3431,17 +3551,13 @@ body.modal-open {
 }
 
 @keyframes xzMenuShadowPulse {
-    0% {
-        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 15px rgba(0, 212, 212, 0.1), inset 0 1px 3px rgba(255, 255, 255, 0.1);
-        border-color: rgba(0, 212, 212, 0.25);
+    0%, 100% {
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 15px rgba(0, 212, 212, 0.2), inset 0 1px 3px rgba(255, 255, 255, 0.15);
+        border-color: rgba(0, 212, 212, 0.2);
     }
     50% {
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(0, 212, 212, 0.35), inset 0 1px 3px rgba(0, 212, 212, 0.2);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 212, 212, 0.45), inset 0 1px 3px rgba(0, 212, 212, 0.25);
         border-color: rgba(0, 212, 212, 0.55);
-    }
-    100% {
-        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 15px rgba(0, 212, 212, 0.1), inset 0 1px 3px rgba(255, 255, 255, 0.1);
-        border-color: rgba(0, 212, 212, 0.25);
     }
 }
 
@@ -3783,6 +3899,26 @@ body {
         inset 0 -2px 6px rgba(0, 0, 0, 0.9);
     
     transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    animation: xzIslandIdleGlow 6s ease-in-out infinite;
+}
+
+@keyframes xzIslandIdleGlow {
+    0%, 100% {
+        box-shadow: 
+            0 20px 45px rgba(0, 0, 0, 0.85),
+            0 0 15px rgba(0, 212, 212, 0.15),
+            inset 0 2px 4px rgba(255, 255, 255, 0.12),
+            inset 0 -2px 6px rgba(0, 0, 0, 0.9);
+        border-color: rgba(0, 212, 212, 0.2);
+    }
+    50% {
+        box-shadow: 
+            0 20px 45px rgba(0, 0, 0, 0.85),
+            0 0 28px rgba(0, 212, 212, 0.35),
+            inset 0 2px 4px rgba(255, 255, 255, 0.15),
+            inset 0 -2px 6px rgba(0, 0, 0, 0.7);
+        border-color: rgba(0, 212, 212, 0.45);
+    }
 }
 
 /* Conic-gradient border lightning sweep */

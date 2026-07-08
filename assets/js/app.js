@@ -1496,6 +1496,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add animation class
         lightboxImg.classList.add('animate-glow');
         
+        // Update caption description dynamically
+        const lightboxCaption = document.getElementById('lightbox-caption');
+        if (lightboxCaption) {
+            lightboxCaption.textContent = currentImg.getAttribute('data-caption') || currentImg.alt || '';
+        }
+        
         // Update active dot indicators
         if (lightboxDotsContainer) {
             const dots = lightboxDotsContainer.querySelectorAll('.lightbox-dot');
@@ -1521,13 +1527,52 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLightboxImage();
     }
 
-    // Attach portfolio click listeners
+    // Attach portfolio click and 3D tilt listeners
     portfolioItems.forEach((item, index) => {
         item.addEventListener('click', () => {
             const allPortfolioImgs = Array.from(document.querySelectorAll('.portfolio-item img'));
             openLightbox(allPortfolioImgs, index);
         });
+
+        // 3D Tilt calculation (Desktop only)
+        item.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 1024) return;
+            const rect = item.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            const maxTilt = 8;
+            const tiltX = -(y / (rect.height / 2)) * maxTilt;
+            const tiltY = (x / (rect.width / 2)) * maxTilt;
+            
+            item.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.04, 1.04, 1.04) translateZ(15px)`;
+        });
+
+        item.addEventListener('mouseleave', () => {
+            item.style.transform = '';
+        });
     });
+
+    // Attach 3D tilt listeners to the old release player card (Desktop only)
+    const oldReleaseCard = document.querySelector('.old-release-card');
+    if (oldReleaseCard) {
+        oldReleaseCard.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 1024) return;
+            const rect = oldReleaseCard.getBoundingClientRect();
+            const x = e.clientX - rect.left - rect.width / 2;
+            const y = e.clientY - rect.top - rect.height / 2;
+            
+            const maxTilt = 5; // slightly lower tilt to account for the larger card dimension
+            const tiltX = -(y / (rect.height / 2)) * maxTilt;
+            const tiltY = (x / (rect.width / 2)) * maxTilt;
+            
+            oldReleaseCard.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02) translateZ(10px)`;
+        });
+
+        oldReleaseCard.addEventListener('mouseleave', () => {
+            oldReleaseCard.style.transform = '';
+        });
+    }
 
     // Attach product mockup click listeners
     productMockups.forEach((img, index) => {
