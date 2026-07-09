@@ -3297,6 +3297,18 @@ html, body {
     }
 }
 
+/* 15.9. Mobile GPU Backdrop-Filter Optimization */
+@media (max-width: 768px) {
+    .main-header,
+    .modal-content,
+    .cart-panel,
+    .xz-companion-menu,
+    .xz-dock-island {
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+    }
+}
+
 /* Prevent background scrolling when modal or menu is open */
 body.modal-open {
     overflow: hidden !important;

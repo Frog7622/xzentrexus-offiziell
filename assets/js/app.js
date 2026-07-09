@@ -55,43 +55,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let isSoundEnabled = true; // global sound toggle — controlled by sound orb
 
     // Instantiate fallback HTML5 Audio elements immediately for aggressive browser caching
-    const clickAudioFallback = new Audio('assets/music/click.wav');
+    const clickAudioFallback = new Audio('assets/music/click.mp3');
     clickAudioFallback.volume = 0.63;  // -4 dB Peak
-    clickAudioFallback.preload = 'auto';
+    clickAudioFallback.preload = 'none';
 
-    const exitAudioFallback = new Audio('assets/music/exit.wav');
+    const exitAudioFallback = new Audio('assets/music/exit.mp3');
     exitAudioFallback.volume = 0.63;   // -4 dB Peak
-    exitAudioFallback.preload = 'auto';
+    exitAudioFallback.preload = 'none';
 
     // XZ Companion Audio Fallbacks
-    const xzClickAudioFallback = new Audio('assets/music/xz_click.wav');
+    const xzClickAudioFallback = new Audio('assets/music/xz_click.mp3');
     xzClickAudioFallback.volume = 0.63;   // -4 dB Peak
-    xzClickAudioFallback.preload = 'auto';
+    xzClickAudioFallback.preload = 'none';
 
-    const xzDragAudioFallback = new Audio('assets/music/xz_drag.wav');
+    const xzDragAudioFallback = new Audio('assets/music/xz_drag.mp3');
     xzDragAudioFallback.volume = 0.63;    // -4 dB Peak
-    xzDragAudioFallback.preload = 'auto';
+    xzDragAudioFallback.preload = 'none';
 
-    const xzCloseAudioFallback = new Audio('assets/music/xz_close.wav');
+    const xzCloseAudioFallback = new Audio('assets/music/xz_close.mp3');
     xzCloseAudioFallback.volume = 0.63;   // -4 dB Peak
-    xzCloseAudioFallback.preload = 'auto';
+    xzCloseAudioFallback.preload = 'none';
 
-    const islandAudioFallback = new Audio('assets/music/island.wav');
+    const islandAudioFallback = new Audio('assets/music/island.mp3');
     islandAudioFallback.volume = 0.63;    // -4 dB Peak
-    islandAudioFallback.preload = 'auto';
+    islandAudioFallback.preload = 'none';
 
     if (AudioContextClass) {
         audioCtx = new AudioContextClass();
         
         // Preload and decode Web Audio API buffers immediately in the background
-        preloadSound('assets/music/click.wav').then(buffer => { clickBuffer = buffer; });
-        preloadSound('assets/music/exit.wav').then(buffer => { exitBuffer = buffer; });
+        preloadSound('assets/music/click.mp3').then(buffer => { clickBuffer = buffer; });
+        preloadSound('assets/music/exit.mp3').then(buffer => { exitBuffer = buffer; });
         
         // Preload XZ sounds
-        preloadSound('assets/music/xz_click.wav').then(buffer => { xzClickBuffer = buffer; });
-        preloadSound('assets/music/xz_drag.wav').then(buffer => { xzDragBuffer = buffer; });
-        preloadSound('assets/music/xz_close.wav').then(buffer => { xzCloseBuffer = buffer; });
-        preloadSound('assets/music/island.wav').then(buffer => { islandBuffer = buffer; });
+        preloadSound('assets/music/xz_click.mp3').then(buffer => { xzClickBuffer = buffer; });
+        preloadSound('assets/music/xz_drag.mp3').then(buffer => { xzDragBuffer = buffer; });
+        preloadSound('assets/music/xz_close.mp3').then(buffer => { xzCloseBuffer = buffer; });
+        preloadSound('assets/music/island.mp3').then(buffer => { islandBuffer = buffer; });
     }
 
     async function preloadSound(url) {
@@ -931,6 +931,66 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutSummaryTotalVal.textContent = `${total.toFixed(2)} €`;
     }
 
+    // Helper to prevent touch scroll leakage to the body element on mobile devices
+    function preventTouchScrollLeak(panelEl, scrollEl) {
+        if (!panelEl || !scrollEl) return;
+        let touchStartClientY = 0;
+        
+        panelEl.addEventListener('touchstart', (e) => {
+            if (e.targetTouches.length === 1) {
+                touchStartClientY = e.targetTouches[0].clientY;
+            }
+        }, { passive: true });
+        
+        panelEl.addEventListener('touchmove', (e) => {
+            if (e.targetTouches.length !== 1) return;
+            
+            // Check if touch target is within the scroll container
+            const isScrollContainer = e.target.closest(`#${scrollEl.id}`) || e.target === scrollEl;
+            if (!isScrollContainer) {
+                // Swipe is outside the scroll container (e.g., header, footer) - block it
+                if (e.cancelable) e.preventDefault();
+                return;
+            }
+            
+            const clientHeight = scrollEl.clientHeight;
+            const scrollHeight = scrollEl.scrollHeight;
+            const scrollTop = scrollEl.scrollTop;
+            
+            // If content is not actually scrollable, prevent touch scroll entirely
+            if (scrollHeight <= clientHeight) {
+                if (e.cancelable) e.preventDefault();
+                return;
+            }
+            
+            const touchMoveClientY = e.targetTouches[0].clientY;
+            const swipeDelta = touchMoveClientY - touchStartClientY;
+            
+            // If swiping down at the top boundary, or up at the bottom boundary, block the swipe
+            if (swipeDelta > 0 && scrollTop <= 0) {
+                if (e.cancelable) e.preventDefault();
+            } else if (swipeDelta < 0 && scrollTop + clientHeight >= scrollHeight) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
+    // Bind scroll leak prevention on cart panel
+    if (cartPanel && cartItemsContainer) {
+        preventTouchScrollLeak(cartPanel, cartItemsContainer);
+    }
+
+    // Bind scroll leak prevention on modals
+    document.querySelectorAll('.modal').forEach(modal => {
+        const content = modal.querySelector('.modal-content');
+        if (content) {
+            if (!content.id) {
+                content.id = 'modal-content-' + Math.random().toString(36).substr(2, 9);
+            }
+            preventTouchScrollLeak(modal, content);
+        }
+    });
+
     // Cart overlay toggle functions
     function toggleCartPanel() {
         cartPanel.classList.toggle('open');
@@ -1535,9 +1595,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 3D Tilt calculation (Desktop only)
+        let rect = null;
+        item.addEventListener('mouseenter', () => {
+            if (window.innerWidth >= 1024) {
+                rect = item.getBoundingClientRect();
+            }
+        });
+
         item.addEventListener('mousemove', (e) => {
             if (window.innerWidth < 1024) return;
-            const rect = item.getBoundingClientRect();
+            if (!rect) rect = item.getBoundingClientRect();
             const x = e.clientX - rect.left - rect.width / 2;
             const y = e.clientY - rect.top - rect.height / 2;
             
@@ -1550,27 +1617,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.addEventListener('mouseleave', () => {
             item.style.transform = '';
+            rect = null;
         });
     });
 
     // Attach 3D tilt listeners to the old release player card (Desktop only)
     const oldReleaseCard = document.querySelector('.old-release-card');
     if (oldReleaseCard) {
+        let cardRect = null;
+        oldReleaseCard.addEventListener('mouseenter', () => {
+            if (window.innerWidth >= 1024) {
+                cardRect = oldReleaseCard.getBoundingClientRect();
+            }
+        });
+
         oldReleaseCard.addEventListener('mousemove', (e) => {
             if (window.innerWidth < 1024) return;
-            const rect = oldReleaseCard.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
+            if (!cardRect) cardRect = oldReleaseCard.getBoundingClientRect();
+            const x = e.clientX - cardRect.left - cardRect.width / 2;
+            const y = e.clientY - cardRect.top - cardRect.height / 2;
             
             const maxTilt = 5; // slightly lower tilt to account for the larger card dimension
-            const tiltX = -(y / (rect.height / 2)) * maxTilt;
-            const tiltY = (x / (rect.width / 2)) * maxTilt;
+            const tiltX = -(y / (cardRect.height / 2)) * maxTilt;
+            const tiltY = (x / (cardRect.width / 2)) * maxTilt;
             
             oldReleaseCard.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.02, 1.02, 1.02) translateZ(10px)`;
         });
 
         oldReleaseCard.addEventListener('mouseleave', () => {
             oldReleaseCard.style.transform = '';
+            cardRect = null;
         });
     }
 
