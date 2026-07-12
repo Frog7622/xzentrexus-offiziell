@@ -1226,6 +1226,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // Disposable / Temporary email domains list
+            const tempMailDomains = [
+                'tempmail.com', 'temp-mail.org', 'temp-mail.ru', 'temp-mail.io', 'tempmailo.com',
+                'mailinator.com', 'guerrillamail.com', 'guerrillamailblock.com', 'guerrillamail.net', 'guerrillamail.org', 'guerrillamail.biz',
+                'yopmail.com', 'yopmail.fr', 'yopmail.net', 'dispostable.com', 'maildrop.cc', 
+                '10minutemail.com', '10minutemail.co.za', '10minutemail.net', '10minutemail.org', 
+                'trashmail.com', 'trashmail.net', 'trashmail.org', 'trashmail.de', 'trashmail.me',
+                'sharklasers.com', 'guerillamail.info', 'grr.la', 'pokemail.net',
+                'getairmail.com', 'airmail.from.sh', 'getairmail.org', 'getnada.com',
+                'burnermail.io', 'dropmail.me', '10minutemail.xyz', 'tempmail.xyz',
+                'crazymailing.com', 'throwawaymail.com', 'emailondeck.com', 'fakemailgenerator.com',
+                'disposable.com', 'tempmail.dev', 'temp-mail.info', 'tempmail.net',
+                'armyspy.com', 'cuvox.de', 'dayrep.com', 'einrot.com', 'fleckens.hu',
+                'gustr.com', 'jourrapide.com', 'rhyta.com', 'superrito.com', 'teleworm.us',
+                'generator.email', 'tempail.com', 'tempail.org', 'mailnesia.com', 'mailcatch.com',
+                'mytrashmail.com', 'tempmailaddress.com', 'boun.cr', 'jetable.org', 'safetymail.info',
+                'wegwerfmail.de', 'trash-mail.com', 'spoofmail.de', 'sofort-mail.de', 'einwegmail.de', 
+                'spambog.de', 'spambog.com', 'byom.de', 'nervmich.net', 'temporary-mail.net', 
+                'müllmail.de', 'muellmail.de'
+            ];
+
+            const emailParts = emailVal.split('@');
+            if (emailParts.length === 2) {
+                const domain = emailParts[1].toLowerCase().trim();
+                if (tempMailDomains.includes(domain)) {
+                    alert('Einweg-E-Mail-Adressen (Wegwerf-E-Mails) werden nicht akzeptiert. Bitte verwende eine reguläre, dauerhafte E-Mail-Adresse (z. B. Gmail, Outlook, GMX, Web.de etc.), damit wir dir die Bestellbestätigung zuverlässig zustellen können.');
+                    return;
+                }
+            }
+
             // Since the cart contains physical items, address is required
             const hasPhysical = cart.some(item => item.id.includes('physical') || item.id.includes('cd'));
             if (hasPhysical && !addressVal) {
