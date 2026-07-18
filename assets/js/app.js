@@ -607,9 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (oldPlayBtn && oldAudio) {
         // Event-driven state updates for old releases audio
         oldAudio.addEventListener('play', () => {
-            if (shopAudio && !shopAudio.paused) {
-                shopAudio.pause();
-            }
             setOldPlayState(true);
         });
 
@@ -752,100 +749,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     /* ==========================================================================
-       4. AUDIO PLAYER 2: CD SHOP PREVIEW PLAYER
-       ========================================================================== */
-    const shopAudio = document.getElementById('shop-preview-audio');
-    const shopTrackRows = document.querySelectorAll('.shop-track-row');
-    let activeShopRow = document.querySelector('.shop-track-row.active');
-
-    function resetShopIcons() {
-        shopTrackRows.forEach(row => {
-            const playIcon = row.querySelector('.shop-play-icon');
-            const pauseIcon = row.querySelector('.shop-pause-icon');
-            if (playIcon && pauseIcon) {
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-            }
-        });
-    }
-
-    let shopPlayPromise = null;
-    if (shopTrackRows.length > 0 && shopAudio) {
-        // Event-driven state updates for shop audio
-        shopAudio.addEventListener('play', () => {
-            // Stop old releases audio
-            if (oldAudio && !oldAudio.paused) {
-                oldAudio.pause();
-                setOldPlayState(false);
-            }
-            // Find active row and show pause icon
-            if (activeShopRow) {
-                const playIcon = activeShopRow.querySelector('.shop-play-icon');
-                const pauseIcon = activeShopRow.querySelector('.shop-pause-icon');
-                if (playIcon && pauseIcon) {
-                    playIcon.classList.add('hidden');
-                    pauseIcon.classList.remove('hidden');
-                }
-            }
-        });
-
-        shopAudio.addEventListener('pause', () => {
-            resetShopIcons();
-        });
-
-        shopTrackRows.forEach(row => {
-            row.addEventListener('click', () => {
-                const isCurrentlyActive = row.classList.contains('active');
-
-                if (isCurrentlyActive) {
-                    const playIcon = row.querySelector('.shop-play-icon');
-                    const isPlayIconVisible = playIcon && !playIcon.classList.contains('hidden');
-
-                    if (isPlayIconVisible) {
-                        shopPlayPromise = shopAudio.play();
-                        if (shopPlayPromise !== undefined) {
-                            shopPlayPromise.catch(err => {
-                                if (err.name === 'AbortError') return;
-                                console.error("Shop audio play failed:", err);
-                            });
-                        }
-                    } else {
-                        shopAudio.pause();
-                    }
-                } else {
-                    shopTrackRows.forEach(r => r.classList.remove('active'));
-                    row.classList.add('active');
-                    activeShopRow = row;
-                    
-                    resetShopIcons();
-                    
-                    const src = row.getAttribute('data-preview-src');
-                    shopAudio.src = src;
-                    
-                    shopPlayPromise = shopAudio.play();
-                    if (shopPlayPromise !== undefined) {
-                        shopPlayPromise.catch(err => {
-                            if (err.name === 'AbortError') return;
-                            console.error("Shop audio play transition failed:", err);
-                        });
-                    }
-                }
-            });
-        });
-
-        shopAudio.addEventListener('ended', () => {
-            resetShopIcons();
-            // Auto play next track in the row list
-            if (activeShopRow) {
-                const nextRow = activeShopRow.nextElementSibling;
-                if (nextRow && nextRow.classList.contains('shop-track-row')) {
-                    nextRow.click();
-                }
-            }
-        });
-    }
-
-    /* ==========================================================================
        5. SHOPPING CART SYSTEM
        ========================================================================== */
     let cart = [];
@@ -873,16 +776,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let appliedDiscountCode = "";
     let freeShipping = false;
 
-    const validPromoCodes = {
-        'ANFANG': 0.20,      // 20% discount
-        'XZENTREXUS': 0.10,  // 10% discount
-        'PROMO15': 0.15      // 15% discount
+    // NOTE ON PROMO CODES:
+    // This is a static site (GitHub Pages) with no backend, so there is no place to
+    // validate codes authoritatively — any client-side check can ultimately be bypassed.
+    // The discount here is only a UX convenience; the binding price is set on the payment
+    // provider's side. To at least keep the plain-text codes out of "View Source", the
+    // codes are stored as SHA-256 hashes and the user input is hashed before comparison.
+    // This prevents casual reading of the source, NOT determined brute-forcing of short
+    // codes. Real discount enforcement must happen server-side / in the payment provider.
+    const validPromoCodeHashes = {
+        // ANFANG -> 20%
+        '96a484a4545f69269632762f2b3c73b8eb869ef0631949e2d535a61a4de37284': 0.20,
+        // XZENTREXUS -> 10%
+        '23bd6f66e73c0481476ce4bca2841709c2e94d1119df55b8add4f4cbf1779f6c': 0.10,
+        // PROMO15 -> 15%
+        '845eb89f2911411d4dbb8aba1fa442476ae4120456fcb146f70cbb2ae1bbc761': 0.15
     };
 
-    // Special promo codes (non-percentage)
-    const specialPromoCodes = {
-        'VERSAND100': 'free_shipping'   // removes shipping costs entirely
+    // Special promo code hashes (non-percentage)
+    const specialPromoCodeHashes = {
+        // VERSAND100 -> removes shipping costs entirely
+        '973f27797319d71a1420c40f99a22cde183881c2bad5b66a7f18ec357404a435': 'free_shipping'
     };
+
+    // Hash a promo code with SHA-256 (Web Crypto). Returns lowercase hex string.
+    async function hashPromoCode(code) {
+        const data = new TextEncoder().encode(code);
+        const digest = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(digest))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+    }
 
     function updateCheckoutTotal() {
         if (!checkoutSummaryTotalVal) return;
@@ -1138,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (applyDiscountBtn && discountCodeInput && discountFeedback) {
-        applyDiscountBtn.addEventListener('click', () => {
+        applyDiscountBtn.addEventListener('click', async () => {
             const enteredCode = discountCodeInput.value.trim().toUpperCase();
             if (!enteredCode) {
                 discountFeedback.textContent = 'Bitte gib einen Code ein.';
@@ -1146,8 +1070,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (specialPromoCodes.hasOwnProperty(enteredCode)) {
-                const action = specialPromoCodes[enteredCode];
+            let enteredHash;
+            try {
+                enteredHash = await hashPromoCode(enteredCode);
+            } catch (err) {
+                console.error('Promo code hashing failed:', err);
+                discountFeedback.textContent = 'Code konnte nicht geprüft werden. Bitte versuche es erneut.';
+                discountFeedback.className = 'discount-feedback error';
+                return;
+            }
+
+            if (specialPromoCodeHashes.hasOwnProperty(enteredHash)) {
+                const action = specialPromoCodeHashes[enteredHash];
                 if (action === 'free_shipping') {
                     freeShipping = true;
                     appliedDiscountCode = appliedDiscountCode ? appliedDiscountCode + ' + ' + enteredCode : enteredCode;
@@ -1155,8 +1089,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     discountFeedback.className = 'discount-feedback success';
                     updateCheckoutTotal();
                 }
-            } else if (validPromoCodes.hasOwnProperty(enteredCode)) {
-                appliedDiscountPercent = validPromoCodes[enteredCode];
+            } else if (validPromoCodeHashes.hasOwnProperty(enteredHash)) {
+                appliedDiscountPercent = validPromoCodeHashes[enteredHash];
                 appliedDiscountCode = enteredCode;
                 discountFeedback.textContent = `Rabattcode '${enteredCode}' (${appliedDiscountPercent * 100}%) erfolgreich angewendet!`;
                 discountFeedback.className = 'discount-feedback success';
@@ -1472,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusBadge.textContent = 'Vorbestellung möglich';
             }
             if (releaseBadge) {
-                releaseBadge.textContent = 'Veröffentlichung am 14.08.2026';
+                releaseBadge.textContent = 'CD-Launch am 14.08.2026';
                 releaseBadge.style.display = 'inline-block';
             }
             if (countdownContainer) countdownContainer.style.display = 'block';

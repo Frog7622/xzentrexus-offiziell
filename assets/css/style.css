@@ -17,7 +17,12 @@
     --color-teal: hsl(var(--teal-h), var(--teal-s), var(--teal-l));
     --color-teal-glow: hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.4);
     --color-teal-dim: hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.15);
-    
+
+    /* Section structure: perceptible alternating tone + seam separator */
+    --color-section-alt: #13181A;
+    --divider-line: linear-gradient(90deg, transparent, hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.28), transparent);
+    --content-width: 820px;
+
     /* Fonts */
     --font-heading: 'Syne', sans-serif;
     --font-body: 'Outfit', sans-serif;
@@ -52,6 +57,31 @@ section {
     scroll-margin-top: 80px;
 }
 
+/* Structural seam separators between the stacked dark sections.
+   A faint teal hairline gives each section a perceptible top edge. */
+.music-section,
+.shop-section,
+.portfolio-section,
+.social-section,
+.contact-section {
+    position: relative;
+}
+/* Soft feathered seam: a faint teal breath at each section's top edge
+   instead of a hard line, so adjacent zones melt into each other. */
+.shop-section::before,
+.portfolio-section::before,
+.social-section::before,
+.contact-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 160px;
+    background: radial-gradient(ellipse 65% 100% at 50% 0%, hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.05) 0%, transparent 72%);
+    pointer-events: none;
+}
+
 body {
     background-color: var(--color-bg);
     color: var(--color-text);
@@ -77,7 +107,7 @@ body {
 .glow-bg-2 {
     position: absolute;
     bottom: 20%;
-    right: -10%;
+    right: 0;
     width: 60vw;
     height: 60vw;
     background: radial-gradient(circle, hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.06) 0%, rgba(0,0,0,0) 70%);
@@ -589,7 +619,7 @@ button, input, textarea {
 }
 
 .about-content-wrapper {
-    max-width: 800px;
+    max-width: var(--content-width);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -729,7 +759,13 @@ button, input, textarea {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, var(--color-bg) 0%, rgba(10, 10, 10, 0.7) 50%, var(--color-bg) 100%);
+    /* Feathered edges: melt the banner into the section above (base tone)
+       and the section below (alt tone) so there is no hard seam. */
+    background: linear-gradient(180deg,
+        var(--color-bg) 0%,
+        rgba(10, 10, 10, 0.6) 32%,
+        rgba(19, 24, 26, 0.6) 72%,
+        var(--color-section-alt) 100%);
     z-index: 1;
 }
 
@@ -761,13 +797,17 @@ button, input, textarea {
    ========================================================================== */
 .music-section {
     padding: var(--section-padding);
-    background-color: var(--color-bg-alt);
-    border-top: 1px solid rgba(255, 255, 255, 0.02);
+    /* Alt tone at the top (continues the banner melt), dissolving into the
+       base tone at the bottom so the seam to the shop section disappears. */
+    background: linear-gradient(180deg,
+        var(--color-section-alt) 0%,
+        var(--color-section-alt) 78%,
+        var(--color-bg) 100%);
 }
 
 /* Custom Audio Player & Release Styles */
 .old-release-container {
-    max-width: 900px;
+    max-width: var(--content-width);
     margin: 0 auto;
 }
 
@@ -1112,15 +1152,8 @@ button, input, textarea {
 }
 
 .shop-section {
-    padding: 13rem 2rem 8rem;
+    padding: var(--section-padding);
     background-color: var(--color-bg);
-    border-top: 1px solid rgba(255, 255, 255, 0.02);
-}
-
-@media (max-width: 768px) {
-    .shop-section {
-        padding: 9rem 1.5rem 5rem;
-    }
 }
 
 /* Pre-order & Release Countdown Styles */
@@ -1469,53 +1502,11 @@ button, input, textarea {
     gap: 0.5rem;
 }
 
-.shop-track-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.8rem 1rem;
-    background: rgba(255, 255, 255, 0.01);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all var(--transition-speed) ease;
-}
-
-.shop-track-row:hover {
-    background: rgba(0, 212, 212, 0.04);
-    border-color: rgba(0, 212, 212, 0.2);
-}
-
-.shop-track-row.active {
-    background: rgba(0, 212, 212, 0.08);
-    border-color: var(--color-teal);
-    box-shadow: inset 0 0 8px rgba(0, 212, 212, 0.1);
-}
-
-.shop-track-play-btn {
-    cursor: pointer;
-    color: var(--color-text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: color var(--transition-speed) ease;
-}
-
-.shop-track-row:hover .shop-track-play-btn,
-.shop-track-row.active .shop-track-play-btn {
-    color: var(--color-teal);
-}
-
 .shop-track-name {
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--color-text-muted);
     transition: color var(--transition-speed) ease;
-}
-
-.shop-track-row.active .shop-track-name {
-    color: #fff;
-    font-weight: 600;
 }
 
 .shop-track-duration {
@@ -1617,26 +1608,14 @@ button, input, textarea {
    10. PORTFOLIO SECTION
    ========================================================================== */
 .portfolio-section {
-    padding: 3rem 2rem 5rem;
-    background-color: var(--color-bg);
-}
-
-@media (max-width: 1024px) {
-    .portfolio-section {
-        padding: 2rem 1.5rem 4rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .portfolio-section {
-        padding: 1.5rem 1.25rem 3.5rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .portfolio-section {
-        padding: 1rem 1rem 3rem;
-    }
+    padding: var(--section-padding);
+    /* A soft "light pool": fades in from the base tone at the top and back
+       out at the bottom, so both seams melt instead of stepping. */
+    background: linear-gradient(180deg,
+        var(--color-bg) 0%,
+        var(--color-section-alt) 14%,
+        var(--color-section-alt) 86%,
+        var(--color-bg) 100%);
 }
 
 .portfolio-grid {
@@ -1785,9 +1764,13 @@ button, input, textarea {
    ========================================================================== */
 .social-section {
     padding: 5rem 2rem;
-    background-color: rgba(255, 255, 255, 0.01);
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    /* Soft light pool — fades in and out of the base tone at both edges,
+       like the other zones, so both seams melt instead of stepping. */
+    background: linear-gradient(180deg,
+        var(--color-bg) 0%,
+        var(--color-section-alt) 18%,
+        var(--color-section-alt) 82%,
+        var(--color-bg) 100%);
 }
 
 .social-links-grid {
@@ -1954,8 +1937,9 @@ button, input, textarea {
    12. FOOTER
    ========================================================================== */
 .main-footer {
-    background-color: #050505;
-    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    /* Melt down from the contact section's base tone into the darker footer,
+       so the last seam is soft too — no hard border. */
+    background: linear-gradient(180deg, var(--color-bg) 0%, #050505 24%);
     padding: 3rem 2rem;
 }
 
