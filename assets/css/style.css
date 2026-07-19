@@ -92,6 +92,17 @@ body {
     position: relative;
 }
 
+/* General guard against horizontal overflow: <main> wraps every content
+   section, so clipping its X-axis stops any section (e.g. a scroll-in
+   animation offset) from ever poking past the viewport and creating a
+   sliver on the right — which body's overflow-x:hidden fails to prevent on
+   mobile due to the overflow-propagation quirk. `clip` keeps overflow-y
+   visible (no nested scroll container) and does not affect fixed/overlay UI,
+   which lives outside <main>. */
+main {
+    overflow-x: clip;
+}
+
 /* Background Ambient Glows */
 .glow-bg-1 {
     position: absolute;
@@ -1154,6 +1165,12 @@ button, input, textarea {
 .shop-section {
     padding: var(--section-padding);
     background-color: var(--color-bg);
+    /* The two product columns fade in via horizontal translateX offsets
+       (fade-left / fade-right). Before they animate in, the right column
+       sticks ~24px past the viewport and body's overflow-x:hidden fails to
+       clip it on mobile (overflow-propagation quirk) -> a sliver appears on
+       the right edge. Clip it locally so the transient offset never overflows. */
+    overflow-x: clip;
 }
 
 /* Pre-order & Release Countdown Styles */
