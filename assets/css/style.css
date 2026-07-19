@@ -59,6 +59,10 @@ section {
 
 /* Structural seam separators between the stacked dark sections.
    A faint teal hairline gives each section a perceptible top edge. */
+/* Sections sit on one uniform base tone; each is divided from the previous
+   one by a thin turquoise LIGHT BEAM at its top edge — a bright teal core
+   that fades out at both ends, wrapped in a soft glow. */
+.about-section,
 .music-section,
 .shop-section,
 .portfolio-section,
@@ -66,8 +70,8 @@ section {
 .contact-section {
     position: relative;
 }
-/* Soft feathered seam: a faint teal breath at each section's top edge
-   instead of a hard line, so adjacent zones melt into each other. */
+.about-section::before,
+.music-section::before,
 .shop-section::before,
 .portfolio-section::before,
 .social-section::before,
@@ -77,8 +81,18 @@ section {
     top: 0;
     left: 0;
     right: 0;
-    height: 160px;
-    background: radial-gradient(ellipse 65% 100% at 50% 0%, hsla(var(--teal-h), var(--teal-s), var(--teal-l), 0.05) 0%, transparent 72%);
+    height: 1px;
+    /* Full-bleed beam: reaches both screen edges, only softly tapering in the
+       outermost 8% so it touches the sides instead of stopping short.
+       Kept more faded than the header beam via reduced opacity. */
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--color-teal) 8%,
+        var(--color-teal) 92%,
+        transparent 100%);
+    box-shadow: 0 0 10px 1px var(--color-teal-glow),
+                0 0 24px 3px var(--color-teal-dim);
+    opacity: 0.45;
     pointer-events: none;
 }
 
@@ -247,6 +261,20 @@ button, input, textarea {
 }
 
 /* Section Title Styling */
+/* Small numbered kicker above each section heading. Gives orientation in the
+   seamless flow (01…06) without introducing any background boundary. */
+.section-eyebrow {
+    display: block;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-teal);
+    margin-bottom: 1.1rem;
+}
+
 .section-title {
     font-size: 3.5rem;
     margin-bottom: 4rem;
@@ -290,14 +318,31 @@ button, input, textarea {
     background-color: rgba(10, 10, 10, 0.75);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: all var(--transition-speed);
+}
+
+/* Same turquoise light beam as the section dividers, along the header's
+   bottom edge — full-bleed, tapering only in the outermost 8%. */
+.main-header::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        var(--color-teal) 8%,
+        var(--color-teal) 92%,
+        transparent 100%);
+    box-shadow: 0 0 10px 1px var(--color-teal-glow),
+                0 0 24px 3px var(--color-teal-dim);
+    pointer-events: none;
 }
 
 .main-header.scrolled {
     padding: 0.5rem 0;
     background-color: rgba(5, 5, 5, 0.9);
-    border-color: rgba(0, 212, 212, 0.15);
 }
 
 .header-container {
@@ -540,10 +585,15 @@ button, input, textarea {
 }
 
 .hero-title {
-    font-size: clamp(1.0rem, 7.8cqw, 6.0rem);
+    /* Sized so the letter-spaced title always fits its container: at the old
+       6rem/0.15em it was wider than the viewport at ~1300px widths, so it
+       could not center (pinned left, right "S" clipped) and looked shifted
+       right. Slightly tighter spacing + tuned scaling keeps it large but lets
+       text-align:center actually center it. text-indent removed — it only
+       pushed the title further right and broke the centering. */
+    font-size: clamp(1rem, 7.6cqw, 6rem);
     text-transform: uppercase;
-    letter-spacing: 0.15em;
-    text-indent: 0.15em;
+    letter-spacing: 0.1em;
     margin: 0 0 1rem 0;
     background: linear-gradient(135deg, #ffffff 0%, #d5f7f7 35%, #00d4d4 70%, #ffffff 100%);
     -webkit-background-clip: text;
@@ -770,13 +820,14 @@ button, input, textarea {
     left: 0;
     width: 100%;
     height: 100%;
-    /* Feathered edges: melt the banner into the section above (base tone)
-       and the section below (alt tone) so there is no hard seam. */
+    /* Feathered edges: the banner image dissolves into the uniform base tone
+       at both top and bottom, so it blends seamlessly into the surrounding
+       flow with no hard seam on either side. */
     background: linear-gradient(180deg,
         var(--color-bg) 0%,
-        rgba(10, 10, 10, 0.6) 32%,
-        rgba(19, 24, 26, 0.6) 72%,
-        var(--color-section-alt) 100%);
+        rgba(10, 10, 10, 0.55) 35%,
+        rgba(10, 10, 10, 0.55) 65%,
+        var(--color-bg) 100%);
     z-index: 1;
 }
 
@@ -808,12 +859,7 @@ button, input, textarea {
    ========================================================================== */
 .music-section {
     padding: var(--section-padding);
-    /* Alt tone at the top (continues the banner melt), dissolving into the
-       base tone at the bottom so the seam to the shop section disappears. */
-    background: linear-gradient(180deg,
-        var(--color-section-alt) 0%,
-        var(--color-section-alt) 78%,
-        var(--color-bg) 100%);
+    background-color: var(--color-bg);
 }
 
 /* Custom Audio Player & Release Styles */
@@ -1626,13 +1672,7 @@ button, input, textarea {
    ========================================================================== */
 .portfolio-section {
     padding: var(--section-padding);
-    /* A soft "light pool": fades in from the base tone at the top and back
-       out at the bottom, so both seams melt instead of stepping. */
-    background: linear-gradient(180deg,
-        var(--color-bg) 0%,
-        var(--color-section-alt) 14%,
-        var(--color-section-alt) 86%,
-        var(--color-bg) 100%);
+    background-color: var(--color-bg);
 }
 
 .portfolio-grid {
@@ -1781,13 +1821,7 @@ button, input, textarea {
    ========================================================================== */
 .social-section {
     padding: 5rem 2rem;
-    /* Soft light pool — fades in and out of the base tone at both edges,
-       like the other zones, so both seams melt instead of stepping. */
-    background: linear-gradient(180deg,
-        var(--color-bg) 0%,
-        var(--color-section-alt) 18%,
-        var(--color-section-alt) 82%,
-        var(--color-bg) 100%);
+    background-color: var(--color-bg);
 }
 
 .social-links-grid {
@@ -2275,7 +2309,7 @@ button, input, textarea {
 .cart-panel {
     position: fixed;
     top: 0;
-    right: -400px;
+    right: 0;
     width: 400px;
     max-width: 100%;
     height: 100vh;
@@ -2285,11 +2319,17 @@ button, input, textarea {
     box-shadow: -10px 0 35px rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
-    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    /* Closed: slide off by the panel's OWN width so it is fully off-screen at
+       ANY viewport width. The old `right: -400px` assumed a 400px panel, but
+       at <=480px the panel is width:100%, so -400px left its edge at exactly
+       400px from the right — a visible sliver on phones wider than 400px CSS
+       px (e.g. Nothing Phone at 412px; iPhones <=400px never showed it). */
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .cart-panel.open {
-    right: 0;
+    transform: translateX(0);
 }
 
 .cart-header {
