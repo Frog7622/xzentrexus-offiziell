@@ -480,6 +480,7 @@ button, input, textarea {
         width: 300px;
         max-width: 80%;
         height: 100vh;
+        height: 100dvh;
         background-color: rgba(5, 5, 5, 0.95);
         backdrop-filter: blur(25px);
         -webkit-backdrop-filter: blur(25px);
@@ -2094,6 +2095,7 @@ button, input, textarea {
 
 .modal-scrollable {
     max-height: 85vh;
+    max-height: 85dvh;
     overflow-y: auto;
 }
 
@@ -2313,6 +2315,8 @@ button, input, textarea {
     width: 400px;
     max-width: 100%;
     height: 100vh;
+    height: 100dvh; /* dynamic viewport height: fits the visible area even when
+                       the mobile URL bar is shown, so "Zur Kasse" is never cut off */
     background-color: var(--color-bg-alt);
     border-left: 1px solid rgba(0, 212, 212, 0.15);
     z-index: 2000;

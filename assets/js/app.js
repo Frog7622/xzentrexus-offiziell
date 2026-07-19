@@ -56,28 +56,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Instantiate fallback HTML5 Audio elements immediately for aggressive browser caching
     const clickAudioFallback = new Audio('assets/music/click.mp3');
-    clickAudioFallback.volume = 0.63;  // -4 dB Peak
+    clickAudioFallback.volume = 0.9;  // raised UI level (~-1 dB)
     clickAudioFallback.preload = 'none';
 
     const exitAudioFallback = new Audio('assets/music/exit.mp3');
-    exitAudioFallback.volume = 0.63;   // -4 dB Peak
+    exitAudioFallback.volume = 0.9;   // raised UI level (~-1 dB)
     exitAudioFallback.preload = 'none';
 
     // XZ Companion Audio Fallbacks
     const xzClickAudioFallback = new Audio('assets/music/xz_click.mp3');
-    xzClickAudioFallback.volume = 0.63;   // -4 dB Peak
+    xzClickAudioFallback.volume = 0.9;   // raised UI level (~-1 dB)
     xzClickAudioFallback.preload = 'none';
 
     const xzDragAudioFallback = new Audio('assets/music/xz_drag.mp3');
-    xzDragAudioFallback.volume = 0.63;    // -4 dB Peak
+    xzDragAudioFallback.volume = 0.9;    // raised UI level (~-1 dB)
     xzDragAudioFallback.preload = 'none';
 
     const xzCloseAudioFallback = new Audio('assets/music/xz_close.mp3');
-    xzCloseAudioFallback.volume = 0.63;   // -4 dB Peak
+    xzCloseAudioFallback.volume = 0.9;   // raised UI level (~-1 dB)
     xzCloseAudioFallback.preload = 'none';
 
     const islandAudioFallback = new Audio('assets/music/island.mp3');
-    islandAudioFallback.volume = 0.63;    // -4 dB Peak
+    islandAudioFallback.volume = 0.9;    // raised UI level (~-1 dB)
     islandAudioFallback.preload = 'none';
 
     if (AudioContextClass) {
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && clickBuffer) {
-            playBuffer(clickBuffer, 0.63);  // -4 dB Peak
+            playBuffer(clickBuffer, 0.9);  // raised UI level (~-1 dB)
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (clickAudioFallback) {
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playExitSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 0.63);   // -4 dB Peak
+            playBuffer(exitBuffer, 0.9);   // raised UI level (~-1 dB)
         } else {
             // HTML5 Fallback (preloaded and unlocked)
             if (exitAudioFallback) {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzClickSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzClickBuffer) {
-            playBuffer(xzClickBuffer, 0.63);  // -4 dB Peak
+            playBuffer(xzClickBuffer, 0.9);  // raised UI level (~-1 dB)
         } else {
             if (xzClickAudioFallback) {
                 xzClickAudioFallback.currentTime = 0;
@@ -205,8 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Start volume at 0 for smooth fade-in
                 gainNode.gain.setValueAtTime(0, currentTime);
-                // Linear ramp to full volume over 1.0 seconds (-4 dB Peak)
-                gainNode.gain.linearRampToValueAtTime(0.63, currentTime + 1.0);
+                // Linear ramp to full volume over 1.0 seconds (raised UI level (~-1 dB))
+                gainNode.gain.linearRampToValueAtTime(0.9, currentTime + 1.0);
                 
                 source.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
@@ -253,9 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentTime = audioCtx.currentTime;
                 // Cancel any pending ramps (like the fade-in)
                 xzDragGainNode.gain.cancelScheduledValues(currentTime);
-                // Determine starting gain: use current instantaneous value (clamped to max 0.63)
+                // Determine starting gain: use current instantaneous value (clamped to max 0.9)
                 let startGain = xzDragGainNode.gain.value;
-                if (startGain > 0.63) startGain = 0.63;  // clamp to new drag max (-4 dB Peak)
+                if (startGain > 0.9) startGain = 0.9;  // clamp to new drag max (raised UI level (~-1 dB))
                 if (startGain < 0) startGain = 0;
                 // Start linear fade-out to 0 over 1 second
                 xzDragGainNode.gain.setValueAtTime(startGain, currentTime);
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzCloseSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && xzCloseBuffer) {
-            playBuffer(xzCloseBuffer, 0.63, false, 0.01);  // -4 dB Peak, skip first 10ms (0.01s)
+            playBuffer(xzCloseBuffer, 0.9, false, 0.01);  // raised UI level (~-1 dB), skip first 10ms (0.01s)
         } else {
             if (xzCloseAudioFallback) {
                 xzCloseAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -316,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playXzOutSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && exitBuffer) {
-            playBuffer(exitBuffer, 0.63, false, 0.01);  // -4 dB Peak, skip first 10ms (0.01s)
+            playBuffer(exitBuffer, 0.9, false, 0.01);  // raised UI level (~-1 dB), skip first 10ms (0.01s)
         } else {
             if (exitAudioFallback) {
                 exitAudioFallback.currentTime = 0.01; // Skip first 10ms
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playIslandSound() {
         if (!isSoundEnabled) return;
         if (audioCtx && islandBuffer) {
-            playBuffer(islandBuffer, 0.63); // -4 dB Peak
+            playBuffer(islandBuffer, 0.9); // raised UI level (~-1 dB)
         } else {
             if (islandAudioFallback) {
                 islandAudioFallback.currentTime = 0;
