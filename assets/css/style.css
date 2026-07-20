@@ -59,42 +59,8 @@ section {
 
 /* Structural seam separators between the stacked dark sections.
    A faint teal hairline gives each section a perceptible top edge. */
-/* Sections sit on one uniform base tone; each is divided from the previous
-   one by a thin turquoise LIGHT BEAM at its top edge — a bright teal core
-   that fades out at both ends, wrapped in a soft glow. */
-.about-section,
-.music-section,
-.shop-section,
-.portfolio-section,
-.social-section,
-.contact-section {
-    position: relative;
-}
-.about-section::before,
-.music-section::before,
-.shop-section::before,
-.portfolio-section::before,
-.social-section::before,
-.contact-section::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    /* Full-bleed beam: reaches both screen edges, only softly tapering in the
-       outermost 8% so it touches the sides instead of stopping short.
-       Kept more faded than the header beam via reduced opacity. */
-    background: linear-gradient(90deg,
-        transparent 0%,
-        var(--color-teal) 8%,
-        var(--color-teal) 92%,
-        transparent 100%);
-    box-shadow: 0 0 10px 1px var(--color-teal-glow),
-                0 0 24px 3px var(--color-teal-dim);
-    opacity: 0.45;
-    pointer-events: none;
-}
+/* All sections and the header share one uniform base tone with no divider
+   lines or light beams anywhere. */
 
 body {
     background-color: var(--color-bg);
@@ -321,24 +287,6 @@ button, input, textarea {
     transition: all var(--transition-speed);
 }
 
-/* Same turquoise light beam as the section dividers, along the header's
-   bottom edge — full-bleed, tapering only in the outermost 8%. */
-.main-header::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: linear-gradient(90deg,
-        transparent 0%,
-        var(--color-teal) 8%,
-        var(--color-teal) 92%,
-        transparent 100%);
-    box-shadow: 0 0 10px 1px var(--color-teal-glow),
-                0 0 24px 3px var(--color-teal-dim);
-    pointer-events: none;
-}
 
 .main-header.scrolled {
     padding: 0.5rem 0;
@@ -551,6 +499,21 @@ button, input, textarea {
     padding: 4rem 0;
     box-sizing: border-box;
     overflow: hidden;
+}
+
+/* Bottom fade: the hero image dissolves into the base tone at its lower edge
+   so the transition into "Über Mich" is seamless (sits above the image/overlay
+   at z-index 0, but below the content and scroll indicator at z-index 10). */
+.hero-section::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, transparent 0%, var(--color-bg) 100%);
+    z-index: 0;
+    pointer-events: none;
 }
 
 .hero-bg {
@@ -829,6 +792,11 @@ button, input, textarea {
         rgba(10, 10, 10, 0.55) 35%,
         rgba(10, 10, 10, 0.55) 65%,
         var(--color-bg) 100%);
+    /* Blur the banner image *through* the overlay: keeps the section's original
+       background-attachment:fixed parallax ("flying") intact, while the quote
+       above (z-index 2) stays perfectly sharp. */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 1;
 }
 
