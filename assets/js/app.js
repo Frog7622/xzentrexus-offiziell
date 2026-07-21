@@ -752,6 +752,14 @@ document.addEventListener('DOMContentLoaded', () => {
        5. SHOPPING CART SYSTEM
        ========================================================================== */
     let cart = [];
+
+    // Flat shipping rate, charged only when the cart holds a physical item.
+    // Digital products (e.g. the plugin) are delivered by download.
+    const SHIPPING_FLAT = 1.99;
+    function cartHasPhysical() {
+        return cart.some(item => item.type === 'physical');
+    }
+
     const cartToggleBtn = document.getElementById('cart-toggle-btn');
     const closeCartBtn = document.getElementById('close-cart-btn');
     const cartPanel = document.getElementById('cart-panel');
@@ -811,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCheckoutTotal() {
         if (!checkoutSummaryTotalVal) return;
         const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        const shippingBase = subtotal > 0 ? 1.99 : 0.00;
+        const shippingBase = cartHasPhysical() ? SHIPPING_FLAT : 0.00;
         const shipping = freeShipping ? 0.00 : shippingBase;
         const discountAmount = subtotal * appliedDiscountPercent;
         const total = Math.max(0, subtotal - discountAmount) + shipping;
@@ -843,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             summaryHtml += `
                 <li class="checkout-shipping-summary">
-                    <span>Versandkosten (gepolstert)</span>
+                    <span>${cartHasPhysical() ? 'Versandkosten (gepolstert)' : 'Versand (nur Download)'}</span>
                     <span>${shippingBase.toFixed(2)} €</span>
                 </li>
             `;
@@ -933,8 +941,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = btn.getAttribute('data-name');
             const price = parseFloat(btn.getAttribute('data-price'));
             const image = btn.getAttribute('data-image');
-            
-            addToCart(id, name, price, image);
+            const type = btn.getAttribute('data-type') || 'physical';
+
+            addToCart(id, name, price, image, type);
             
             if (!cartPanel.classList.contains('open')) {
                 toggleCartPanel();
@@ -942,13 +951,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function addToCart(id, name, price, image) {
+    function addToCart(id, name, price, image, type = 'physical') {
 
         const existingItem = cart.find(item => item.id === id);
         if (existingItem) {
             existingItem.qty += 1;
         } else {
-            cart.push({ id, name, price, image, qty: 1 });
+            cart.push({ id, name, price, image, type, qty: 1 });
         }
         updateCart();
     }
@@ -977,8 +986,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Subtotal
         const itemsSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        // Shipping cost flat rate: 1,99 € zzgl.
-        const shippingCost = itemsSubtotal > 0 ? 1.99 : 0.00;
+        // Shipping only applies to physical goods; digital items ship for free.
+        const shippingCost = cartHasPhysical() ? SHIPPING_FLAT : 0.00;
         const totalWithShipping = itemsSubtotal + shippingCost;
         
         cartTotalValue.textContent = `${totalWithShipping.toFixed(2)} €`;
@@ -1017,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `).join('')}
                 </div>
                 <div class="cart-shipping-info-row">
-                    <span class="shipping-info-label">Versand (gepolstert):</span>
+                    <span class="shipping-info-label">${cartHasPhysical() ? 'Versand (gepolstert):' : 'Versand (nur Download):'}</span>
                     <span class="shipping-info-val">${shippingCost.toFixed(2)} €</span>
                 </div>
             `;
@@ -1190,8 +1199,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Since the cart contains physical items, address is required
-            const hasPhysical = cart.some(item => item.id.includes('physical') || item.id.includes('cd'));
+            // A delivery address is only required when a physical item is present
+            const hasPhysical = cartHasPhysical();
             if (hasPhysical && !addressVal) {
                 alert('Bitte gib eine vollständige Lieferadresse für den CD-Versand an.');
                 if (addressField) addressField.focus();
@@ -1213,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Build order items summary text
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const shippingBase = subtotal > 0 ? 1.99 : 0.00;
+            const shippingBase = hasPhysical ? SHIPPING_FLAT : 0.00;
             const shipping = freeShipping ? 0.00 : shippingBase;
             const discountAmount = subtotal * appliedDiscountPercent;
             const total = Math.max(0, subtotal - discountAmount) + shipping;
@@ -1280,16 +1289,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ==========================================================================
-       5.5. PRODUCT SLIDER (CD SHOP)
+       5.5. PRODUCT SLIDERS (SHOP — PHYSICAL & DIGITAL)
        ========================================================================== */
-    const productSlider = document.getElementById('product-slider');
-    const sliderPrev = document.getElementById('slider-prev');
-    const sliderNext = document.getElementById('slider-next');
-    const sliderDotsContainer = document.getElementById('slider-dots');
-    
-    if (productSlider) {
-        const slides = productSlider.querySelectorAll('.product-slide');
-        const dots = sliderDotsContainer ? sliderDotsContainer.querySelectorAll('.dot') : [];
+    // One independent slider instance per product gallery (CD + digital plugin).
+    document.querySelectorAll('.product-slider').forEach((sliderEl) => {
+        const gallery = sliderEl.closest('.product-gallery-area');
+        const slides = sliderEl.querySelectorAll('.product-slide');
+        if (slides.length === 0) return;
+
+        // Dots belong to the same gallery as this slider
+        const dotsContainer = gallery ? gallery.querySelector('.slider-dots') : null;
+        const dots = dotsContainer ? dotsContainer.querySelectorAll('.dot') : [];
         let currentSlideIndex = 0;
         const totalSlides = slides.length;
 
@@ -1304,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Translate the slider container
-            productSlider.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+            sliderEl.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
 
             // Update active states on slides
             slides.forEach((slide, i) => {
@@ -1325,20 +1335,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Prev Arrow click
-        if (sliderPrev) {
-            sliderPrev.addEventListener('click', () => {
-                goToSlide(currentSlideIndex - 1);
-            });
-        }
-
-        // Next Arrow click
-        if (sliderNext) {
-            sliderNext.addEventListener('click', () => {
-                goToSlide(currentSlideIndex + 1);
-            });
-        }
-
         // Dots click
         dots.forEach((dot) => {
             dot.addEventListener('click', () => {
@@ -1356,16 +1352,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let startX = 0;
         let endX = 0;
 
-        productSlider.addEventListener('touchstart', (e) => {
+        sliderEl.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             endX = startX; // Reset endX to startX to prevent tap-to-slide calculation bug
         }, { passive: true });
 
-        productSlider.addEventListener('touchmove', (e) => {
+        sliderEl.addEventListener('touchmove', (e) => {
             endX = e.touches[0].clientX;
         }, { passive: true });
 
-        productSlider.addEventListener('touchend', () => {
+        sliderEl.addEventListener('touchend', () => {
             const diffX = startX - endX;
             const threshold = 50; // pixels
             if (Math.abs(diffX) > threshold) {
@@ -1378,7 +1374,172 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-    }
+    });
+
+    /* ==========================================================================
+       5.55. CD MANUFACTURING ANIMATION (scroll-driven: press → print → burn)
+       ========================================================================== */
+    (function initCdForge() {
+        const forge = document.getElementById('cd-forge');
+        if (!forge) return;
+
+        const disc = document.getElementById('xz-disc');
+        const plateL = document.getElementById('xz-plate-left');
+        const plateR = document.getElementById('xz-plate-right');
+        const printHead = document.getElementById('xz-print-head');
+        const printRect = document.getElementById('xz-print-rect');
+        const burnPath = document.getElementById('xz-burn-path');
+        const laser = document.getElementById('xz-laser');
+        const laserDot = document.getElementById('xz-laser-dot');
+        const phaseLabels = forge.querySelectorAll('.cd-forge-phase');
+        if (!disc || !burnPath) return;
+
+        // Geometry of the disc's data area
+        const CX = 240, CY = 150, R_IN = 30, R_OUT = 71, TURNS = 9;
+        const PRINT_TOP = 74, PRINT_H = 152;
+
+        // Build the burn spiral once
+        let d = '';
+        const steps = TURNS * 60;
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const angle = t * TURNS * Math.PI * 2;
+            const radius = R_IN + (R_OUT - R_IN) * t;
+            d += (i === 0 ? 'M' : 'L') +
+                 (CX + Math.cos(angle) * radius).toFixed(2) + ' ' +
+                 (CY + Math.sin(angle) * radius).toFixed(2) + ' ';
+        }
+        burnPath.setAttribute('d', d.trim());
+
+        const pathLen = burnPath.getTotalLength();
+        burnPath.style.strokeDasharray = pathLen;
+        burnPath.style.strokeDashoffset = pathLen;
+
+        const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+        // Normalised progress inside one phase of the overall 0..1 timeline
+        const phase = (p, from, to) => clamp((p - from) / (to - from), 0, 1);
+        const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+        function render(p) {
+            // Phase 1 — the press plates close and the blank disc forms
+            const press = ease(phase(p, 0.02, 0.34));
+            plateL.style.transform = `translateX(${(84 * press).toFixed(2)}px)`;
+            plateR.style.transform = `translateX(${(-84 * press).toFixed(2)}px)`;
+            disc.style.transform = `scale(${(0.4 + 0.6 * press).toFixed(3)})`;
+            disc.style.opacity = press.toFixed(3);
+
+            // Phase 2 — the print head travels down and reveals the artwork.
+            // Its opacity follows a trapezoidal envelope so the bar fades in as
+            // it enters and fades out again as it finishes, instead of popping.
+            const print = ease(phase(p, 0.34, 0.68));
+            const HEAD_FADE = 0.18; // share of the phase spent fading in / out
+            printHead.style.transform = `translateY(${(PRINT_TOP + PRINT_H * print).toFixed(2)}px)`;
+            printHead.style.opacity = Math.min(
+                clamp(print / HEAD_FADE, 0, 1),
+                clamp((1 - print) / HEAD_FADE, 0, 1)
+            ).toFixed(3);
+            printRect.setAttribute('height', (PRINT_H * print).toFixed(1));
+
+            // Phase 3 — the laser burns the data spiral outwards
+            const burn = ease(phase(p, 0.68, 0.99));
+            burnPath.style.strokeDashoffset = (pathLen * (1 - burn)).toFixed(2);
+            laser.style.opacity = (burn > 0 && burn < 1) ? '1' : '0';
+            if (burn > 0) {
+                const pt = burnPath.getPointAtLength(pathLen * burn);
+                laserDot.setAttribute('cx', pt.x.toFixed(2));
+                laserDot.setAttribute('cy', pt.y.toFixed(2));
+            }
+
+            const activeIndex = p < 0.34 ? 0 : (p < 0.68 ? 1 : 2);
+            phaseLabels.forEach((el, i) => el.classList.toggle('active', i === activeIndex));
+        }
+
+        const prefersReducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (prefersReducedMotion) {
+            render(1); // show the finished disc, no scroll choreography
+            return;
+        }
+
+        let scheduled = false;
+        function onScroll() {
+            if (scheduled) return;
+            scheduled = true;
+            window.requestAnimationFrame(() => {
+                const rect = forge.getBoundingClientRect();
+                const vh = window.innerHeight || document.documentElement.clientHeight;
+                // 0 as the window enters from below, 1 once it has travelled up past centre
+                const travel = vh * 0.75 + rect.height * 0.65;
+                render(clamp((vh * 0.9 - rect.top) / travel, 0, 1));
+                scheduled = false;
+            });
+        }
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+        onScroll();
+    })();
+
+    /* ==========================================================================
+       5.56. WORD-BY-WORD TEXT REVEAL
+       ========================================================================== */
+    (function initWordReveal() {
+        const blocks = document.querySelectorAll('[data-reveal-words]');
+        if (blocks.length === 0) return;
+
+        const prefersReducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Wrap every word in its own span while leaving inline markup
+        // (<strong>, <em>, links …) intact, so formatting survives the split.
+        function splitWords(node, counter) {
+            Array.prototype.slice.call(node.childNodes).forEach(child => {
+                if (child.nodeType === 3) { // text node
+                    if (!child.textContent.trim()) return;
+                    const fragment = document.createDocumentFragment();
+                    child.textContent.split(/(\s+)/).forEach(part => {
+                        if (!part) return;
+                        if (/^\s+$/.test(part)) {
+                            fragment.appendChild(document.createTextNode(' '));
+                            return;
+                        }
+                        const span = document.createElement('span');
+                        span.className = 'reveal-word';
+                        span.textContent = part;
+                        span.style.transitionDelay = (counter.index * 0.03).toFixed(2) + 's';
+                        counter.index++;
+                        fragment.appendChild(span);
+                    });
+                    node.replaceChild(fragment, child);
+                } else if (child.nodeType === 1 && !child.classList.contains('reveal-word')) {
+                    splitWords(child, counter); // recurse into <strong> etc.
+                }
+            });
+        }
+
+        blocks.forEach(block => {
+            block.querySelectorAll('p').forEach(p => {
+                splitWords(p, { index: 0 });
+            });
+        });
+
+        if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+            blocks.forEach(block => block.classList.add('words-in'));
+            return;
+        }
+
+        const wordObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('words-in');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.25 });
+
+        blocks.forEach(block => wordObserver.observe(block));
+    })();
 
     /* ==========================================================================
        5.6. AUTOMATIC PRE-ORDER & RELEASE SYSTEM
@@ -1626,6 +1787,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Open lightbox after a tiny delay to let the click animation play
             setTimeout(() => {
                 openLightbox(productMockups, index);
+            }, 250);
+        });
+    });
+
+    // Digital product screenshots: same click feedback as the CD mockups,
+    // but they form their own lightbox gallery.
+    const pluginShots = document.querySelectorAll('.plugin-shot');
+    pluginShots.forEach((img, index) => {
+        img.addEventListener('click', () => {
+            img.classList.add('clicked-glow');
+            setTimeout(() => {
+                img.classList.remove('clicked-glow');
+            }, 600);
+
+            setTimeout(() => {
+                openLightbox(pluginShots, index);
             }, 250);
         });
     });
@@ -3029,7 +3206,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dockParam) {
                 const parts = dockParam.split(',');
                 if (parts.length === 4) {
-                    const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'contact', 'empty'];
+                    const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'scrollBottom', 'shop', 'contact', 'empty'];
                     const allValid = parts.every(p => validActions.includes(p));
                     if (allValid) {
                         islandConfig = parts;
@@ -3131,6 +3308,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>`,
                 action: (e) => {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                getStatusClass: () => ''
+            },
+            scrollBottom: {
+                label: 'Nach unten',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>`,
+                action: (e) => {
+                    const bottom = Math.max(
+                        document.body.scrollHeight,
+                        document.documentElement.scrollHeight
+                    );
+                    window.scrollTo({ top: bottom, behavior: 'smooth' });
+                },
+                getStatusClass: () => ''
+            },
+            shop: {
+                label: 'Shop',
+                icon: () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l2-5h16l2 5"/><path d="M3.5 9v11a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V9"/><path d="M9.5 21v-6h5v6"/></svg>`,
+                action: (e) => {
+                    const shopSection = document.getElementById('shop');
+                    if (shopSection) {
+                        shopSection.scrollIntoView({ behavior: 'smooth' });
+                    }
                 },
                 getStatusClass: () => ''
             },
@@ -3433,7 +3633,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const imported = JSON.parse(event.target.result);
                         if (Array.isArray(imported) && imported.length === 4) {
-                            const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'contact', 'empty'];
+                            const validActions = ['sound', 'dock', 'flight', 'chat', 'cart', 'scroll', 'scrollBottom', 'shop', 'contact', 'empty'];
                             const allValid = imported.every(p => validActions.includes(p));
                             if (allValid) {
                                 islandConfig = imported;

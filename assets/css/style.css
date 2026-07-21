@@ -1175,6 +1175,40 @@ button, input, textarea {
     gap: 5%;
     align-items: start;
     margin-top: 2rem;
+    /* Premium product shell — identical for every product, physical or digital */
+    position: relative;
+    padding: 3rem;
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(0, 212, 212, 0.06) 0%, transparent 60%),
+        linear-gradient(160deg, rgba(20, 26, 28, 0.85) 0%, rgba(10, 10, 10, 0.7) 100%);
+    border: 1px solid rgba(0, 212, 212, 0.14);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.5s cubic-bezier(0.25, 0.8, 0.25, 1),
+                border-color 0.5s ease;
+}
+
+.single-product-layout:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 212, 212, 0.3);
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.65),
+                0 0 40px rgba(0, 212, 212, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Thin light beam along the card's upper edge */
+.single-product-layout::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-teal), transparent);
+    opacity: 0.55;
+    pointer-events: none;
 }
 
 .shop-section {
@@ -1350,7 +1384,8 @@ button, input, textarea {
     padding: 2rem;
 }
 
-.cd-mockup {
+.cd-mockup,
+.plugin-shot {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -1360,7 +1395,8 @@ button, input, textarea {
     cursor: zoom-in;
 }
 
-.product-slide:hover .cd-mockup {
+.product-slide:hover .cd-mockup,
+.product-slide:hover .plugin-shot {
     transform: scale(1.03);
     box-shadow: 0 15px 35px rgba(0,0,0,0.4), 0 0 25px rgba(0, 212, 212, 0.4), 0 0 45px rgba(0, 212, 212, 0.2);
 }
@@ -1639,6 +1675,359 @@ button, input, textarea {
 /* ==========================================================================
    10. PORTFOLIO SECTION
    ========================================================================== */
+/* ==========================================================================
+   SHOP: CATEGORIES (PHYSICAL / DIGITAL) & DIGITAL PRODUCT
+   ========================================================================== */
+.shop-category-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-teal);
+    margin: 0 0 2.5rem;
+}
+
+/* Flanking light lines make each category read as a deliberate chapter */
+.shop-category-title::before,
+.shop-category-title::after {
+    content: "";
+    flex: 1 1 auto;
+    max-width: 170px;
+    height: 1px;
+}
+
+.shop-category-title::before {
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 212, 0.4));
+}
+
+.shop-category-title::after {
+    background: linear-gradient(90deg, rgba(0, 212, 212, 0.4), transparent);
+}
+
+.shop-category-title svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Breathing room between the two product blocks */
+.single-product-layout + .shop-category-title {
+    margin-top: 6rem;
+}
+
+/* Struck-through original price for sale items */
+.price-old {
+    display: inline-block;
+    margin-right: 0.6rem;
+    font-size: 0.55em;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+}
+
+.product-badge.badge-sale {
+    background: rgba(0, 212, 212, 0.15);
+    border: 1px solid var(--color-teal);
+    color: var(--color-teal);
+}
+
+/* --------------------------------------------------------------------------
+   Stacked showcase: manufacturing animation → wide gallery → description
+   -------------------------------------------------------------------------- */
+.product-layout-stacked {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+}
+
+/* The manufacturing animation window */
+.cd-forge {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 20px;
+    overflow: hidden;
+    background:
+        radial-gradient(90% 120% at 50% 0%, rgba(0, 212, 212, 0.10) 0%, transparent 65%),
+        linear-gradient(165deg, #10171a 0%, #080b0c 100%);
+    border: 1px solid rgba(0, 212, 212, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.cd-forge-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Transform origins for the scroll-driven parts */
+#xz-disc {
+    transform-box: view-box;
+    transform-origin: 240px 150px;
+    opacity: 0;
+}
+
+#xz-plate-left,
+#xz-plate-right,
+#xz-print-head {
+    transform-box: view-box;
+}
+
+/* Phase labels */
+.cd-forge-phases {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.9rem 1rem;
+    flex-wrap: wrap;
+}
+
+.cd-forge-phase {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
+}
+
+.cd-forge-phase.active {
+    color: var(--color-teal);
+    text-shadow: 0 0 12px rgba(0, 212, 212, 0.5);
+}
+
+/* Wide gallery: same box, pulled much wider */
+.gallery-wide .product-slider-wrapper {
+    aspect-ratio: 16 / 9;
+    margin-bottom: 1.25rem;
+}
+
+/* Handwritten discount note, sitting in the product title's row */
+.product-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.discount-scribble {
+    flex-shrink: 0;
+    font-family: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--color-teal);
+    text-shadow: 0 0 18px rgba(0, 212, 212, 0.45);
+    transform: rotate(-9deg);
+    pointer-events: none;
+}
+
+/* Word-by-word description reveal */
+.reveal-word {
+    display: inline-block;
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(5px);
+    transition: opacity 0.34s ease, filter 0.34s ease, transform 0.34s ease;
+}
+
+.words-in .reveal-word {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    .product-layout-stacked {
+        gap: 2rem;
+    }
+
+    .cd-forge {
+        aspect-ratio: 4 / 3;
+        border-radius: 14px;
+    }
+
+    .cd-forge-phases {
+        gap: 0.9rem;
+        padding: 0.6rem;
+    }
+
+    .cd-forge-phase {
+        font-size: 0.6rem;
+        letter-spacing: 0.14em;
+    }
+
+    .gallery-wide .product-slider-wrapper {
+        aspect-ratio: 4 / 3;
+    }
+
+    .discount-scribble {
+        font-size: 1.9rem;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Premium detailing & purchase cues
+   -------------------------------------------------------------------------- */
+
+/* Price: the single loudest element in the details column */
+.product-price-tag {
+    font-size: 2.6rem;
+    letter-spacing: -0.01em;
+}
+
+/* Primary call-to-action: full width, with a light sweep on hover */
+.btn-large {
+    width: 100%;
+    padding: 1.15rem 2.6rem;
+    font-size: 1.05rem;
+}
+
+.btn-primary::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(120deg,
+        transparent,
+        rgba(255, 255, 255, 0.45),
+        transparent);
+    transform: skewX(-20deg);
+    transition: left 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+    pointer-events: none;
+}
+
+.btn-primary:hover::after {
+    left: 130%;
+}
+
+/* Feature list reveals itself line by line as the card scrolls in */
+.product-specifications li {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+[data-scroll-animate].animated .product-specifications li {
+    opacity: 1;
+    transform: none;
+}
+
+.product-specifications li:nth-child(1) { transition-delay: 0.10s; }
+.product-specifications li:nth-child(2) { transition-delay: 0.16s; }
+.product-specifications li:nth-child(3) { transition-delay: 0.22s; }
+.product-specifications li:nth-child(4) { transition-delay: 0.28s; }
+.product-specifications li:nth-child(5) { transition-delay: 0.34s; }
+.product-specifications li:nth-child(6) { transition-delay: 0.40s; }
+.product-specifications li:nth-child(7) { transition-delay: 0.46s; }
+.product-specifications li:nth-child(8) { transition-delay: 0.52s; }
+.product-specifications li:nth-child(9) { transition-delay: 0.58s; }
+.product-specifications li:nth-child(10) { transition-delay: 0.64s; }
+.product-specifications li:nth-child(11) { transition-delay: 0.70s; }
+.product-specifications li:nth-child(12) { transition-delay: 0.76s; }
+
+/* Reassurance row directly under the buy button */
+.product-trust-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.6rem;
+    width: 100%;
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.product-trust-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+}
+
+.product-trust-row svg {
+    width: 15px;
+    height: 15px;
+    color: var(--color-teal);
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .shop-category-title {
+        font-size: 1rem;
+        letter-spacing: 0.14em;
+        margin-bottom: 2rem;
+        gap: 0.7rem;
+    }
+
+    .shop-category-title::before,
+    .shop-category-title::after {
+        max-width: 60px;
+    }
+
+    .single-product-layout + .shop-category-title {
+        margin-top: 4rem;
+    }
+
+    .single-product-layout {
+        padding: 1.5rem 1.25rem;
+        border-radius: 14px;
+    }
+
+    .product-price-tag {
+        font-size: 2.1rem;
+    }
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+    .single-product-layout,
+    .single-product-layout:hover {
+        transform: none;
+        transition: none;
+    }
+
+    .product-specifications li {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .btn-primary::after {
+        display: none;
+    }
+
+    .preorder-notice {
+        animation: none;
+    }
+
+    /* Show the description instantly instead of revealing it word by word */
+    .reveal-word {
+        opacity: 1;
+        filter: none;
+        transform: none;
+        transition: none;
+    }
+
+    /* The forge is rendered in its finished state by the script */
+    #xz-disc {
+        opacity: 1;
+    }
+}
+
 .portfolio-section {
     padding: var(--section-padding);
     background-color: var(--color-bg);
@@ -2246,7 +2635,8 @@ button, input, textarea {
     }
 }
 
-.cd-mockup.clicked-glow {
+.cd-mockup.clicked-glow,
+.plugin-shot.clicked-glow {
     animation: clickFlashGlow 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 

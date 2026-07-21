@@ -35,7 +35,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Syne:wght@700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons (pinned version for security) -->
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
@@ -59,7 +59,7 @@
                     <li><a href="#hero" class="nav-link active">Home</a></li>
                     <li><a href="#about" class="nav-link">Über Mich</a></li>
                     <li><a href="#music" class="nav-link">Alte Releases</a></li>
-                    <li><a href="#shop" class="nav-link">CD "Anfang"</a></li>
+                    <li><a href="#shop" class="nav-link">Shop</a></li>
                     <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
                     <li><a href="#contact" class="nav-link">Kontakt</a></li>
                 </ul>
@@ -198,12 +198,85 @@
         <!-- 4. Shop Section (CD "Anfang" Single Product Showcase) -->
         <section class="shop-section" id="shop">
             <div class="section-container">
-                <span class="section-eyebrow" data-scroll-animate="fade-up">03 — Release</span>
-                <h2 class="section-title text-center" data-scroll-animate="fade-up">CD „Anfang“</h2>
+                <span class="section-eyebrow" data-scroll-animate="fade-up">03 — Shop</span>
+                <h2 class="section-title text-center" data-scroll-animate="fade-up">Shop</h2>
+
+                <!-- Category: physical products -->
+                <h3 class="shop-category-title" data-scroll-animate="fade-up">
+                    <i data-lucide="package"></i> Physische Produkte
+                </h3>
                 
-                <div class="single-product-layout">
-                    <!-- Left Column: Large Product Cover Slider -->
-                    <div class="product-gallery-area" data-scroll-animate="fade-right">
+                <div class="single-product-layout product-layout-stacked">
+
+                    <!-- 1. Scroll-driven manufacturing animation: press → print → burn -->
+                    <div class="cd-forge" id="cd-forge">
+                        <svg class="cd-forge-svg" viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation: Die CD wird gepresst, mit dem Cover bedruckt und anschließend gebrannt.">
+                            <defs>
+                                <clipPath id="xz-disc-face"><circle cx="240" cy="150" r="76"/></clipPath>
+                                <clipPath id="xz-print-reveal"><rect id="xz-print-rect" x="160" y="74" width="160" height="0"/></clipPath>
+                                <radialGradient id="xz-disc-grad" cx="38%" cy="30%" r="75%">
+                                    <stop offset="0%" stop-color="#2b3639"/>
+                                    <stop offset="55%" stop-color="#141b1d"/>
+                                    <stop offset="100%" stop-color="#090c0d"/>
+                                </radialGradient>
+                                <filter id="xz-forge-glow">
+                                    <feGaussianBlur stdDeviation="3" result="b"/>
+                                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+
+                            <!-- machine rails -->
+                            <line x1="0" y1="58" x2="480" y2="58" stroke="rgba(0,212,212,0.10)" stroke-width="1"/>
+                            <line x1="0" y1="242" x2="480" y2="242" stroke="rgba(0,212,212,0.10)" stroke-width="1"/>
+
+                            <!-- press plates -->
+                            <g id="xz-plate-left">
+                                <rect x="-72" y="96" width="60" height="108" rx="6" fill="#101617" stroke="var(--color-teal)" stroke-width="1.5" opacity="0.9"/>
+                                <line x1="-60" y1="122" x2="-24" y2="122" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                                <line x1="-60" y1="150" x2="-24" y2="150" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                                <line x1="-60" y1="178" x2="-24" y2="178" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                            </g>
+                            <g id="xz-plate-right">
+                                <rect x="492" y="96" width="60" height="108" rx="6" fill="#101617" stroke="var(--color-teal)" stroke-width="1.5" opacity="0.9"/>
+                                <line x1="504" y1="122" x2="540" y2="122" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                                <line x1="504" y1="150" x2="540" y2="150" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                                <line x1="504" y1="178" x2="540" y2="178" stroke="var(--color-teal)" stroke-width="1" opacity="0.45"/>
+                            </g>
+
+                            <!-- the disc itself -->
+                            <g id="xz-disc">
+                                <circle cx="240" cy="150" r="78" fill="url(#xz-disc-grad)" stroke="rgba(0,212,212,0.45)" stroke-width="1.5"/>
+                                <g clip-path="url(#xz-disc-face)">
+                                    <g clip-path="url(#xz-print-reveal)">
+                                        <image href="assets/images/28282.png" x="164" y="74" width="152" height="152" preserveAspectRatio="xMidYMid slice" opacity="0.9"/>
+                                    </g>
+                                </g>
+                                <path id="xz-burn-path" fill="none" stroke="var(--color-teal)" stroke-width="1.5" stroke-linecap="round" filter="url(#xz-forge-glow)"/>
+                                <circle cx="240" cy="150" r="27" fill="none" stroke="rgba(0,212,212,0.22)" stroke-width="1"/>
+                                <circle cx="240" cy="150" r="17" fill="#0A0A0A" stroke="rgba(0,212,212,0.5)" stroke-width="1.2"/>
+                            </g>
+
+                            <!-- print head -->
+                            <g id="xz-print-head" opacity="0">
+                                <rect x="150" y="-7" width="180" height="14" rx="3" fill="#0d1213" stroke="var(--color-teal)" stroke-width="1.4"/>
+                                <line x1="158" y1="7" x2="322" y2="7" stroke="var(--color-teal)" stroke-width="2" opacity="0.85" filter="url(#xz-forge-glow)"/>
+                            </g>
+
+                            <!-- burning laser -->
+                            <g id="xz-laser" opacity="0">
+                                <circle id="xz-laser-dot" cx="240" cy="150" r="3.5" fill="#ffffff" filter="url(#xz-forge-glow)"/>
+                            </g>
+                        </svg>
+
+                        <div class="cd-forge-phases">
+                            <span class="cd-forge-phase">01 · Pressen</span>
+                            <span class="cd-forge-phase">02 · Bedrucken</span>
+                            <span class="cd-forge-phase">03 · Brennen</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Wide product gallery -->
+                    <div class="product-gallery-area gallery-wide" data-scroll-animate="fade-up">
                         <div class="product-slider-wrapper">
                             <div class="product-slider" id="product-slider">
                                 <div class="product-slide active">
@@ -231,6 +304,24 @@
                         </div>
                         <div class="product-gallery-hints text-center">
                             <span class="image-caption">Bedruckte CD + Handsignierte Autogramkarte</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Details, opening with the word-by-word description -->
+                    <div class="product-details-area" data-scroll-animate="fade-up">
+                        <div class="product-header">
+                            <div class="product-badge-group">
+                                <span class="product-badge" id="product-status-badge">Vorbestellung möglich</span>
+                                <span class="product-badge badge-secondary" id="product-release-badge">CD-Launch am 14.08.2026</span>
+                            </div>
+                            <h3 class="product-main-title">„Anfang“</h3>
+                            <p class="product-artist-line">Künstler: <strong>xzentrexus</strong></p>
+                            <div class="product-price-tag">7,25 € <span class="price-suffix">zzgl. Versand</span></div>
+                        </div>
+                        
+                        <div class="product-description-text" data-reveal-words>
+                            <p>Die physische Edition des Albums „Anfang“ enthält alle vier Titel als bedruckte CD-R-Ausgabe.</p>
+                            <p>Alle enthaltenen Songs wurden eigenständig produziert – von der Komposition über die Texte bis hin zu Mix und Mastering.</p>
                         </div>
 
                         <!-- Countdown Container -->
@@ -262,24 +353,6 @@
                                 <span class="sales-counter-text">Limitierte Edition · <strong>30 Stück</strong></span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Right Column: Product Presentation -->
-                    <div class="product-details-area" data-scroll-animate="fade-left">
-                        <div class="product-header">
-                            <div class="product-badge-group">
-                                <span class="product-badge" id="product-status-badge">Vorbestellung möglich</span>
-                                <span class="product-badge badge-secondary" id="product-release-badge">CD-Launch am 14.08.2026</span>
-                            </div>
-                            <h3 class="product-main-title">„Anfang“</h3>
-                            <p class="product-artist-line">Künstler: <strong>xzentrexus</strong></p>
-                            <div class="product-price-tag">7,25 € <span class="price-suffix">zzgl. Versand</span></div>
-                        </div>
-                        
-                        <div class="product-description-text">
-                            <p>Die physische Edition des Albums „Anfang“ enthält alle vier Titel als bedruckte CD-R-Ausgabe.</p>
-                            <p>Alle enthaltenen Songs wurden eigenständig produziert – von der Komposition über die Texte bis hin zu Mix und Mastering.</p>
-                        </div>
                         
                         <div class="product-specifications">
                             <h4>Produktdetails</h4>
@@ -295,6 +368,10 @@
                                 <li>
                                     <i data-lucide="package"></i>
                                     <span>Versand in gepolstertem Versandumschlag</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="truck"></i>
+                                    <span>Lieferzeit: 2–5 Werktage</span>
                                 </li>
                                 <li>
                                     <i data-lucide="pen-tool"></i>
@@ -355,12 +432,198 @@
                             </div>
                             <button class="btn btn-primary btn-large add-to-cart-btn" 
                                     id="shop-order-btn"
-                                    data-id="anfang-cd-physical" 
+                                    data-id="anfang-cd-physical"
+                                    data-type="physical" 
                                     data-name="CD - Anfang (Vorbestellung)" 
                                     data-price="7.25" 
                                     data-image="assets/images/anfang_cd.jpg">
                                 <i data-lucide="shopping-cart"></i> Jetzt vorbestellen
                             </button>
+                            <div class="product-trust-row">
+                                <span><i data-lucide="shield-check"></i> Sichere Zahlung</span>
+                                <span><i data-lucide="lock"></i> SSL-verschlüsselt</span>
+                                <span><i data-lucide="package"></i> Versand nach Release</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category: digital products -->
+                <h3 class="shop-category-title" data-scroll-animate="fade-up">
+                    <i data-lucide="download"></i> Digitale Produkte
+                </h3>
+
+                <div class="single-product-layout product-layout-stacked">
+                    <!-- Wide product gallery (same structure as the CD, minus the animation) -->
+                    <div class="product-gallery-area gallery-wide" data-scroll-animate="fade-up">
+                        <div class="product-slider-wrapper">
+                            <div class="product-slider">
+                                <div class="product-slide active">
+                                    <div class="cd-container-3d">
+                                        <img src="assets/images/xdeqz_eq.png" alt="_X_D-EQ_z_ – Dynamic-EQ-Ansicht" class="plugin-shot" loading="lazy" decoding="async" data-caption="_X_D-EQ_z_ — Dynamic EQ">
+                                    </div>
+                                </div>
+                                <div class="product-slide">
+                                    <div class="cd-container-3d">
+                                        <img src="assets/images/xdeqz_advanced.png" alt="_X_D-EQ_z_ – Advanced-Ansicht" class="plugin-shot" loading="lazy" decoding="async" data-caption="_X_D-EQ_z_ — Advanced">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slider-dots">
+                            <span class="dot active" data-slide="0"></span>
+                            <span class="dot" data-slide="1"></span>
+                        </div>
+                        <div class="product-gallery-hints text-center">
+                            <span class="image-caption">16 Bänder · Dynamik pro Band · Linear Phase · Mid/Side</span>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Product Presentation -->
+                    <div class="product-details-area" data-scroll-animate="fade-up">
+                        <div class="product-header">
+                            <div class="product-badge-group">
+                                <span class="product-badge">Sofort-Download</span>
+                                <span class="product-badge badge-secondary">VST3 · Standalone</span>
+                                <span class="product-badge badge-secondary">Windows · macOS</span>
+                            </div>
+                            <div class="product-title-row">
+                                <h3 class="product-main-title">_X_D-EQ_z_</h3>
+                                <span class="discount-scribble" aria-label="34 Prozent Rabatt">−34 %</span>
+                            </div>
+                            <p class="product-artist-line">Entwickler: <strong>xzentrexus</strong></p>
+                            <div class="product-price-tag">
+                                <span class="price-old">89,00 €</span>
+                                59,00 € <span class="price-suffix">inkl. MwSt.</span>
+                            </div>
+                        </div>
+
+                        <div class="product-description-text" data-reveal-words>
+                            <p>Ein Equalizer, der zuhört: Jedes der <strong>16 Bänder</strong> ist gleichzeitig Filter und Kompressor – es greift erst ein, wenn das Signal es verlangt, und lässt los, sobald es vorbei ist.</p>
+                            <p>Statt eine Resonanz pauschal wegzuschneiden und dem Track die Luft zu nehmen, senkt _X_D-EQ_z_ genau die Stelle ab – genau in dem Moment, in dem sie zu laut wird. Dazu echte lineare Phase über den gesamten EQ, Mid/Side pro Band und ein Graph, in dem man all das sieht.</p>
+                        </div>
+
+                        <div class="product-specifications">
+                            <h4>Funktionen</h4>
+                            <ul>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>16 Bänder in 4 Stages – jedes Band zugleich Filter und Kompressor</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>7 Filtertypen: Bell, Low/High Shelf, Low/High Cut, Notch, Band Pass</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Cut-Flanken 6 / 12 / 24 / 48 dB/Okt · ±30 dB · Q 0,10–18</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Kanalmodus pro Band: Stereo, Left, Right, Mid oder Side</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Dynamik pro Band mit 6 dB Soft Knee, Range-Grenze, ab- oder aufwärts</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Peak-/RMS-Detektor (12 ms) mit Auto Release</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Externer Sidechain pro Band · Look-ahead bis 20 ms</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Echte lineare Phase über den gesamten EQ inkl. Mid/Side</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Oversampling bis 16×, Soft Clipper, Auto Gain, Mix 0–100 %</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Interaktiver Graph: Live-Spektrum, Threshold-Kurve, Goniometer</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="check"></i>
+                                    <span>Plugin Link mit Combo-Presets über mehrere Instanzen</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Technical data (mirrors the CD's tracklist block) -->
+                        <div class="product-tracks-preview">
+                            <h4>Technische Daten</h4>
+                            <div class="shop-track-list static-list">
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Formate</span>
+                                    <span class="shop-track-duration">VST3, Standalone</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Systeme</span>
+                                    <span class="shop-track-duration">Windows, macOS</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Bänder</span>
+                                    <span class="shop-track-duration">16 (4 Stages à 4)</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Frequenz</span>
+                                    <span class="shop-track-duration">20 Hz – 20 kHz</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Dynamik</span>
+                                    <span class="shop-track-duration">−60…0 dB · bis 20:1</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Attack / Release</span>
+                                    <span class="shop-track-duration">0,1–200 ms · 5–2000 ms</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Phase</span>
+                                    <span class="shop-track-duration">Minimum · Linear</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Oversampling</span>
+                                    <span class="shop-track-duration">bis 16×</span>
+                                </div>
+                                <div class="shop-track-row-static">
+                                    <span class="shop-track-name">Latenz</span>
+                                    <span class="shop-track-duration">0 ms (Minimum Phase)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="product-notes">
+                            <p>Hinweise:</p>
+                            <ul>
+                                <li>Digitales Produkt – der Download-Link wird nach Zahlungseingang per E-Mail zugestellt. Es fallen keine Versandkosten an.</li>
+                                <li>Die Screenshots zeigen die Benutzeroberfläche; das Aussehen kann je nach Version leicht abweichen.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Product Actions -->
+                        <div class="product-actions">
+                            <div class="preorder-notice">
+                                <i data-lucide="info"></i>
+                                <span>Sofort-Download nach Zahlungseingang – kein Versand.</span>
+                            </div>
+                            <button class="btn btn-primary btn-large add-to-cart-btn"
+                                    id="plugin-order-btn"
+                                    data-id="plugin-xdeqz-digital"
+                                    data-type="digital"
+                                    data-name="_X_D-EQ_z_ (Plugin, Download)"
+                                    data-price="59.00"
+                                    data-image="assets/images/xdeqz_eq.png">
+                                <i data-lucide="download"></i> Jetzt kaufen
+                            </button>
+                            <div class="product-trust-row">
+                                <span><i data-lucide="shield-check"></i> Sichere Zahlung</span>
+                                <span><i data-lucide="lock"></i> SSL-verschlüsselt</span>
+                                <span><i data-lucide="download"></i> Sofort-Download</span>
+                            </div>
                         </div>
                     </div>
                 </div>
