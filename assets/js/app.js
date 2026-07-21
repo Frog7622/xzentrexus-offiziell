@@ -737,12 +737,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setOldPlayState(isPlaying) {
+        // Look the icons up on every call instead of using cached references.
+        // lucide.createIcons() keeps the data-lucide attribute on the <svg> it
+        // generates, so every later call (the mobile menu toggles it on each
+        // open/close) replaces these nodes with fresh ones. A cached reference
+        // would then be detached from the document and toggling 'hidden' on it
+        // would silently do nothing — the button would stop updating visually.
+        const playIcon = document.getElementById('old-play-icon');
+        const pauseIcon = document.getElementById('old-pause-icon');
+        if (!playIcon || !pauseIcon) return;
+
         if (isPlaying) {
-            oldPlayIcon.classList.add('hidden');
-            oldPauseIcon.classList.remove('hidden');
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
         } else {
-            oldPlayIcon.classList.remove('hidden');
-            oldPauseIcon.classList.add('hidden');
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
         }
     }
 
@@ -1440,10 +1450,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ).toFixed(3);
             printRect.setAttribute('height', (PRINT_H * print).toFixed(1));
 
-            // Phase 3 — the laser burns the data spiral outwards
+            // Phase 3 — the laser burns the data spiral outwards. Same
+            // trapezoidal envelope as the print head, so the laser powers
+            // up smoothly and dims out once the burn is finished.
             const burn = ease(phase(p, 0.68, 0.99));
+            const LASER_FADE = 0.14;
             burnPath.style.strokeDashoffset = (pathLen * (1 - burn)).toFixed(2);
-            laser.style.opacity = (burn > 0 && burn < 1) ? '1' : '0';
+            laser.style.opacity = Math.min(
+                clamp(burn / LASER_FADE, 0, 1),
+                clamp((1 - burn) / LASER_FADE, 0, 1)
+            ).toFixed(3);
             if (burn > 0) {
                 const pt = burnPath.getPointAtLength(pathLen * burn);
                 laserDot.setAttribute('cx', pt.x.toFixed(2));
@@ -1773,6 +1789,63 @@ document.addEventListener('DOMContentLoaded', () => {
             oldReleaseCard.style.transform = '';
             cardRect = null;
         });
+    }
+
+    // Interactive portrait in the About section: 3D tilt (desktop) + lightbox
+    const aboutImageWrap = document.querySelector('.about-image-centered');
+    if (aboutImageWrap) {
+        const aboutImg = aboutImageWrap.querySelector('.about-image');
+        let aboutRect = null;
+
+        aboutImageWrap.addEventListener('mouseenter', () => {
+            if (window.innerWidth >= 1024) {
+                aboutRect = aboutImageWrap.getBoundingClientRect();
+            }
+        });
+
+        aboutImageWrap.addEventListener('mousemove', (e) => {
+            if (window.innerWidth < 1024) return;
+            if (!aboutRect) aboutRect = aboutImageWrap.getBoundingClientRect();
+            const x = e.clientX - aboutRect.left - aboutRect.width / 2;
+            const y = e.clientY - aboutRect.top - aboutRect.height / 2;
+
+            const maxTilt = 7;
+            const tiltX = -(y / (aboutRect.height / 2)) * maxTilt;
+            const tiltY = (x / (aboutRect.width / 2)) * maxTilt;
+
+            aboutImageWrap.style.transform =
+                `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.03, 1.03, 1.03)`;
+        });
+
+        aboutImageWrap.addEventListener('mouseleave', () => {
+            aboutImageWrap.style.transform = '';
+            aboutRect = null;
+        });
+
+        if (aboutImg) {
+            aboutImageWrap.addEventListener('click', () => {
+                aboutImg.classList.add('clicked-glow');
+                setTimeout(() => {
+                    aboutImg.classList.remove('clicked-glow');
+                }, 600);
+
+                // Single-image gallery, so the lightbox shows no dots
+                setTimeout(() => {
+                    openLightbox([aboutImg], 0);
+                }, 250);
+            });
+
+            // Keyboard access: the portrait behaves like a button
+            aboutImageWrap.setAttribute('role', 'button');
+            aboutImageWrap.setAttribute('tabindex', '0');
+            aboutImageWrap.setAttribute('aria-label', 'Portrait vergrößern');
+            aboutImageWrap.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openLightbox([aboutImg], 0);
+                }
+            });
+        }
     }
 
     // Attach product mockup click listeners

@@ -661,6 +661,23 @@ button, input, textarea {
     aspect-ratio: 1024/682;
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: var(--shadow-glass);
+    /* Interactive: tilts on hover, opens in the lightbox on click */
+    cursor: zoom-in;
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                box-shadow 0.4s ease,
+                border-color 0.4s ease;
+}
+
+.about-image-centered:hover,
+.about-image-centered:focus-visible {
+    border-color: rgba(0, 212, 212, 0.35);
+    box-shadow: var(--shadow-glass), 0 0 35px rgba(0, 212, 212, 0.18);
+}
+
+.about-image-centered:focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 3px;
 }
 
 .about-image {
@@ -2026,6 +2043,15 @@ button, input, textarea {
     #xz-disc {
         opacity: 1;
     }
+
+    /* No 3D tilt on the portrait; it stays clickable */
+    .about-image-centered {
+        transition: none;
+    }
+
+    .about-image-centered:hover .about-image {
+        transform: none;
+    }
 }
 
 .portfolio-section {
@@ -2636,7 +2662,8 @@ button, input, textarea {
 }
 
 .cd-mockup.clicked-glow,
-.plugin-shot.clicked-glow {
+.plugin-shot.clicked-glow,
+.about-image.clicked-glow {
     animation: clickFlashGlow 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
@@ -3613,37 +3640,8 @@ html, body {
     margin-bottom: 1.5rem;
 }
 
-/* 15.5. Desktop Split About Section (PC layout above 992px) */
-@media (min-width: 993px) {
-    .about-content-wrapper {
-        flex-direction: row;
-        align-items: center;
-        gap: 4rem;
-        max-width: 1100px;
-    }
-    
-    .about-image-centered {
-        flex: 0 0 45%;
-        max-width: 480px;
-    }
-    
-    .about-text-content-centered {
-        flex: 1;
-        text-align: left;
-    }
-    
-    .about-p {
-        text-align: left;
-    }
-    
-    .about-subtitle {
-        text-align: left;
-    }
-    
-    .about-subtitle::after {
-        margin: 0.5rem 0 0 0;
-    }
-}
+/* 15.5. About section deliberately has NO desktop split: the portrait sits
+   above the text at every width, matching every other section on the page. */
 
 /* 15.6. Responsive Portfolio Grid (Restored to original flex layout for centering single item) */
 
