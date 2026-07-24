@@ -3,11 +3,41 @@
    ========================================================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
+
+    /* ======================================================================
+       RELEASE CONFIG — every pre-release / prototype behaviour hangs off this
+       single block. To go live, set RELEASED = true (and drop in the real
+       payment link). Everything prototype-only then switches off at once.
+       ====================================================================== */
+    const RELEASE = {
+        // Master switch:  false = prototype (pre-launch)  ·  true = live
+        RELEASED: false,
+
+        // Prototype-only conditions (only take effect while RELEASED === false)
+        showPrototypeBadge: true,   // the "Prototyp – kein Angebot" corner note
+        blockCheckout: true,        // block real payment; show a prototype notice
+
+        // Real payment link — used only once RELEASED. Replace the test link.
+        paymentUrl: 'https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00',
+
+        // CD release date (month is 0-based → 7 = August)
+        cdReleaseDate: new Date(2026, 7, 14, 0, 0, 0)
+    };
+    // Are we still in the pre-release / prototype phase?
+    const IS_PROTOTYPE = !RELEASE.RELEASED;
+
     // Force scroll to top (Hero) on page load – prevents browser scroll restoration
     if ('scrollRestoration' in history) {
         history.scrollRestoration = 'manual';
     }
     window.scrollTo(0, 0);
+
+    // Hide the prototype disclaimer badge once the site is released.
+    // (It lives in the HTML by default, so it stays visible even if JS fails.)
+    if (RELEASE.RELEASED || !RELEASE.showPrototypeBadge) {
+        const protoBadge = document.querySelector('.prototype-badge');
+        if (protoBadge) protoBadge.remove();
+    }
 
     // Initialize Lucide Icons
     if (typeof lucide !== 'undefined') {
@@ -837,7 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render summary items
         let summaryHtml = cart.map(item => `
             <li>
-                <span>${item.qty}x ${escapeHTML(item.name)}</span>
+                <span>${item.qty}x ${escapeHTML(item.name)}${item.variant ? ' — ' + escapeHTML(item.variant) : ''}${item.note ? ' · ' + escapeHTML(item.note) : ''}</span>
                 <span>${(item.price * item.qty).toFixed(2)} €</span>
             </li>
         `).join('');
@@ -943,31 +973,195 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeCartBtn) closeCartBtn.addEventListener('click', toggleCartPanel);
     if (cartPanelOverlay) cartPanelOverlay.addEventListener('click', toggleCartPanel);
 
+    // Reads a product's data-* attributes into a single object
+    function readProduct(btn) {
+        return {
+            baseId: btn.getAttribute('data-id'),
+            name: btn.getAttribute('data-name'),
+            price: parseFloat(btn.getAttribute('data-price')),
+            image: btn.getAttribute('data-image'),
+            type: btn.getAttribute('data-type') || 'physical'
+        };
+    }
+
+    // Format a number as a German euro string, e.g. 78.4 -> "78,40 €"
+    function euro(v) {
+        return v.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    // Round to cents
+    function money(v) {
+        return Math.round(v * 100) / 100;
+    }
+
+    // Commits a product to the cart. opts may carry a variant, an overridden
+    // price, an id suffix, an original (pre-discount) price and a note.
+    function commitToCart(p, opts) {
+        opts = opts || {};
+        const variant = opts.variant || null;
+        const price = (opts.price != null) ? opts.price : p.price;
+        const suffix = opts.idSuffix || variant || '';
+        const id = suffix ? `${p.baseId}--${suffix}` : p.baseId;
+        addToCart(id, p.name, price, p.image, p.type, variant, opts.origPrice || null, opts.note || null);
+        if (!cartPanel.classList.contains('open')) {
+            toggleCartPanel();
+        }
+    }
+
+    /* --- Variant selection modal: mandatory choice before adding to cart.
+       Multiple variants can be selected; picking every variant applies a
+       bundle discount to the combined price. --- */
+    const variantModal = document.getElementById('variant-modal');
+    const variantChoiceList = document.getElementById('variant-choice-list');
+    const variantSummary = document.getElementById('variant-summary');
+    const variantConfirmBtn = document.getElementById('variant-confirm-btn');
+    const variantModalTitle = document.getElementById('variant-modal-title');
+    const variantModalDesc = document.getElementById('variant-modal-desc');
+    const closeVariantModalBtn = document.getElementById('close-variant-modal');
+
+    let pendingProduct = null;   // product awaiting a variant choice
+    let pendingVariants = [];    // all available options for it
+    let bundleDiscount = 0;      // e.g. 0.20 when all options are chosen
+
+    function getChosenVariants() {
+        if (!variantChoiceList) return [];
+        return [...variantChoiceList.querySelectorAll('.variant-choice.active')]
+            .map(c => c.getAttribute('data-variant'));
+    }
+
+    // Does the current selection qualify for the bundle discount?
+    function isBundle(chosen) {
+        return bundleDiscount > 0 &&
+               pendingVariants.length > 1 &&
+               chosen.length === pendingVariants.length;
+    }
+
+    function updateVariantSummary() {
+        if (!pendingProduct) return;
+        const chosen = getChosenVariants();
+        const base = pendingProduct.price;
+
+        if (chosen.length === 0) {
+            variantSummary.innerHTML = '';
+            variantConfirmBtn.disabled = true;
+            return;
+        }
+
+        variantConfirmBtn.disabled = false;
+        const full = base * chosen.length;
+
+        if (isBundle(chosen)) {
+            const discounted = money(full * (1 - bundleDiscount));
+            variantSummary.innerHTML =
+                `<span class="variant-summary-old">${euro(full)}</span>` +
+                `<span class="variant-summary-now">${euro(discounted)}</span>` +
+                `<span class="variant-summary-badge">−${Math.round(bundleDiscount * 100)} % Bundle</span>`;
+        } else {
+            variantSummary.innerHTML = `<span class="variant-summary-now">${euro(full)}</span>`;
+        }
+    }
+
+    function closeVariantModal() {
+        if (variantModal) variantModal.classList.remove('open');
+        pendingProduct = null;
+        pendingVariants = [];
+        bundleDiscount = 0;
+    }
+
+    function openVariantModal(btn, product) {
+        if (!variantModal || !variantChoiceList) return;
+        pendingProduct = product;
+        pendingVariants = (btn.getAttribute('data-variants') || '')
+            .split(',').map(v => v.trim()).filter(Boolean);
+        bundleDiscount = (parseFloat(btn.getAttribute('data-bundle-discount')) || 0) / 100;
+
+        const label = btn.getAttribute('data-variant-label') || 'Bitte wähle mindestens eine Version aus.';
+        variantModalTitle.textContent = product.name;
+        variantModalDesc.textContent = label;
+
+        // Nothing is preselected — the user must actively pick.
+        variantChoiceList.innerHTML = pendingVariants.map(v => `
+            <button type="button" class="variant-choice" role="checkbox" aria-checked="false" data-variant="${escapeHTML(v)}">
+                <span class="variant-choice-name">${escapeHTML(v)}</span>
+                <span class="variant-choice-tick" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+            </button>
+        `).join('');
+
+        variantSummary.innerHTML = '';
+        variantConfirmBtn.disabled = true;
+        variantModal.classList.add('open');
+    }
+
+    if (variantChoiceList) {
+        variantChoiceList.addEventListener('click', (e) => {
+            const choice = e.target.closest('.variant-choice');
+            if (!choice) return;
+            // Toggle this option independently (multi-select)
+            const nowActive = !choice.classList.contains('active');
+            choice.classList.toggle('active', nowActive);
+            choice.setAttribute('aria-checked', nowActive ? 'true' : 'false');
+            updateVariantSummary();
+        });
+    }
+
+    if (variantConfirmBtn) {
+        variantConfirmBtn.addEventListener('click', () => {
+            const chosen = getChosenVariants();
+            if (!pendingProduct || chosen.length === 0) return; // guard: nothing chosen
+
+            const product = pendingProduct;
+            const base = product.price;
+
+            if (isBundle(chosen)) {
+                // One combined line: both licences, 20 % off the sum
+                const full = base * chosen.length;
+                commitToCart(product, {
+                    variant: chosen.join(' + '),
+                    idSuffix: 'bundle-' + chosen.join('-'),
+                    price: money(full * (1 - bundleDiscount)),
+                    origPrice: money(full),
+                    note: `−${Math.round(bundleDiscount * 100)} % Bundle-Rabatt (beide Versionen)`
+                });
+            } else {
+                // Each chosen variant becomes its own cart line at full price
+                chosen.forEach(variant => commitToCart(product, { variant }));
+            }
+
+            closeVariantModal();
+        });
+    }
+
+    if (closeVariantModalBtn) closeVariantModalBtn.addEventListener('click', closeVariantModal);
+    if (variantModal) {
+        const ov = variantModal.querySelector('.modal-overlay');
+        if (ov) ov.addEventListener('click', closeVariantModal);
+    }
+
     // Add product to cart logic
     const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
     addToCartButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-id');
-            const name = btn.getAttribute('data-name');
-            const price = parseFloat(btn.getAttribute('data-price'));
-            const image = btn.getAttribute('data-image');
-            const type = btn.getAttribute('data-type') || 'physical';
+            const product = readProduct(btn);
+            const hasVariants = (btn.getAttribute('data-variants') || '').trim().length > 0;
 
-            addToCart(id, name, price, image, type);
-            
-            if (!cartPanel.classList.contains('open')) {
-                toggleCartPanel();
+            if (hasVariants) {
+                // Force the OS/version choice first — nothing is added yet.
+                openVariantModal(btn, product);
+            } else {
+                commitToCart(product, {});
             }
         });
     });
 
-    function addToCart(id, name, price, image, type = 'physical') {
+    function addToCart(id, name, price, image, type = 'physical', variant = null, origPrice = null, note = null) {
 
         const existingItem = cart.find(item => item.id === id);
         if (existingItem) {
             existingItem.qty += 1;
         } else {
-            cart.push({ id, name, price, image, type, qty: 1 });
+            cart.push({ id, name, price, image, type, variant, origPrice, note, qty: 1 });
         }
         updateCart();
     }
@@ -1022,7 +1216,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}" class="cart-item-img">
                             <div class="cart-item-info">
                                 <h4 class="cart-item-name">${escapeHTML(item.name)}</h4>
-                                <span class="cart-item-price">${(item.price * item.qty).toFixed(2)} €</span>
+                                ${item.variant ? `<span class="cart-item-variant">Lizenz: ${escapeHTML(item.variant)}</span>` : ''}
+                                ${item.note ? `<span class="cart-item-note">${escapeHTML(item.note)}</span>` : ''}
+                                <span class="cart-item-price">${item.origPrice ? `<s class="cart-item-price-old">${(item.origPrice * item.qty).toFixed(2)} €</s> ` : ''}${(item.price * item.qty).toFixed(2)} €</span>
                                 <div class="cart-item-qty">
                                     <button class="qty-btn dec-qty" data-id="${escapeHTML(item.id)}">-</button>
                                     <span class="qty-val">${item.qty}</span>
@@ -1130,7 +1326,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
+            // Prototype guard: no real order or payment is triggered pre-launch.
+            if (IS_PROTOTYPE && RELEASE.blockCheckout) {
+                alert('Dies ist ein Prototyp – Bestellungen und Zahlungen sind derzeit deaktiviert.\n\nEs wurde keine Bestellung ausgelöst und kein Geld abgebucht.');
+                return;
+            }
+
             // Honeypot check for spam protection
             const hpField = document.getElementById('checkout-hp');
             if (hpField && hpField.value) {
@@ -1238,7 +1440,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const total = Math.max(0, subtotal - discountAmount) + shipping;
 
             const orderItemsText = cart.map(item =>
-                `${item.qty}x ${item.name} — ${(item.price * item.qty).toFixed(2)} €`
+                `${item.qty}x ${item.name}${item.variant ? ' [Lizenz: ' + item.variant + ']' : ''}${item.note ? ' (' + item.note + ')' : ''} — ${(item.price * item.qty).toFixed(2)} €`
             ).join('\n') +
                 (appliedDiscountPercent > 0 ? `\nRabatt (${appliedDiscountCode}): -${discountAmount.toFixed(2)} €` : '') +
                 (freeShipping ? `\nVersand: 0,00 € (Code: VERSAND100 – kostenloser Versand)` : `\nVersand: ${shippingBase.toFixed(2)} €`);
@@ -1286,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     // Redirect to Stripe page
-                    window.location.href = "https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00";
+                    window.location.href = RELEASE.paymentUrl;
                 }, 1000);
             })
             .catch((error) => {
@@ -1560,7 +1762,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ==========================================================================
        5.6. AUTOMATIC PRE-ORDER & RELEASE SYSTEM
        ========================================================================== */
-    const releaseTargetTime = new Date(2026, 7, 14, 0, 0, 0).getTime();
+    const releaseTargetTime = RELEASE.cdReleaseDate.getTime();
     
     const statusBadge = document.getElementById('product-status-badge');
     const releaseBadge = document.getElementById('product-release-badge');
