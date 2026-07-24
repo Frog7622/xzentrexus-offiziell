@@ -483,7 +483,8 @@
                     <div class="product-details-area" data-scroll-animate="fade-up">
                         <div class="product-header">
                             <div class="product-badge-group">
-                                <span class="product-badge">Sofort-Download</span>
+                                <span class="product-badge" id="plugin-status-badge">Vorbestellung möglich</span>
+                                <span class="product-badge badge-secondary" id="plugin-release-badge">Release am 25.08.2026</span>
                                 <span class="product-badge badge-secondary">VST3 · Standalone</span>
                                 <span class="product-badge badge-secondary">Windows · macOS</span>
                             </div>
@@ -501,6 +502,29 @@
                         <div class="product-description-text" data-reveal-words>
                             <p>Ein Equalizer, der zuhört: Jedes der <strong>16 Bänder</strong> ist gleichzeitig Filter und Kompressor – es greift erst ein, wenn das Signal es verlangt, und lässt los, sobald es vorbei ist.</p>
                             <p>Statt eine Resonanz pauschal wegzuschneiden und dem Track die Luft zu nehmen, senkt _X_D-EQ_z_ genau die Stelle ab – genau in dem Moment, in dem sie zu laut wird. Dazu echte lineare Phase über den gesamten EQ, Mid/Side pro Band und ein Graph, in dem man all das sieht.</p>
+                        </div>
+
+                        <!-- Plugin pre-order countdown -->
+                        <div id="plugin-countdown" class="release-countdown-container">
+                            <div class="countdown-label">Plugin-Release in:</div>
+                            <div class="countdown-timer">
+                                <div class="countdown-item">
+                                    <span class="countdown-val" id="plugin-cd-days">00</span>
+                                    <span class="countdown-unit">Tage</span>
+                                </div>
+                                <div class="countdown-item">
+                                    <span class="countdown-val" id="plugin-cd-hours">00</span>
+                                    <span class="countdown-unit">Std</span>
+                                </div>
+                                <div class="countdown-item">
+                                    <span class="countdown-val" id="plugin-cd-minutes">00</span>
+                                    <span class="countdown-unit">Min</span>
+                                </div>
+                                <div class="countdown-item">
+                                    <span class="countdown-val" id="plugin-cd-seconds">00</span>
+                                    <span class="countdown-unit">Sek</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="product-specifications">
@@ -599,33 +623,33 @@
                         <div class="product-notes">
                             <p>Hinweise:</p>
                             <ul>
-                                <li>Digitales Produkt – der Download-Link wird nach Zahlungseingang per E-Mail zugestellt. Es fallen keine Versandkosten an.</li>
+                                <li>Vorbestellung eines digitalen Produkts – der Download-Link wird zum Release-Termin (25.08.2026) per E-Mail zugestellt. Es fallen keine Versandkosten an.</li>
                                 <li>Die Screenshots zeigen die Benutzeroberfläche; das Aussehen kann je nach Version leicht abweichen.</li>
                             </ul>
                         </div>
 
                         <!-- Product Actions -->
                         <div class="product-actions">
-                            <div class="preorder-notice">
+                            <div class="preorder-notice" id="plugin-preorder-notice">
                                 <i data-lucide="info"></i>
-                                <span>Sofort-Download nach Zahlungseingang – kein Versand.</span>
+                                <span>Der Download-Link wird zum Release (25.08.2026) per E-Mail zugestellt – kein Versand.</span>
                             </div>
                             <button class="btn btn-primary btn-large add-to-cart-btn"
                                     id="plugin-order-btn"
                                     data-id="plugin-xdeqz-digital"
                                     data-type="digital"
-                                    data-name="_X_D-EQ_z_ (Plugin, Download)"
+                                    data-name="_X_D-EQ_z_ (Plugin, Vorbestellung)"
                                     data-price="49.00"
                                     data-variants="Windows,macOS"
                                     data-variant-label="Für welche Betriebssysteme brauchst du die Lizenz? Wähle beide und spare 20 %."
                                     data-bundle-discount="20"
                                     data-image="assets/images/xdeqz_eq.png">
-                                <i data-lucide="download"></i> Jetzt kaufen
+                                <i data-lucide="shopping-cart"></i> Jetzt vorbestellen
                             </button>
                             <div class="product-trust-row">
                                 <span><i data-lucide="shield-check"></i> Sichere Zahlung</span>
                                 <span><i data-lucide="lock"></i> SSL-verschlüsselt</span>
-                                <span><i data-lucide="download"></i> Sofort-Download</span>
+                                <span><i data-lucide="download"></i> Download zum Release</span>
                             </div>
                         </div>
                     </div>

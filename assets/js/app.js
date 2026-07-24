@@ -20,8 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Real payment link — used only once RELEASED. Replace the test link.
         paymentUrl: 'https://buy.stripe.com/test_4gM7sLb6V3un9W0aHecwg00',
 
-        // CD release date (month is 0-based → 7 = August)
-        cdReleaseDate: new Date(2026, 7, 14, 0, 0, 0)
+        // Release dates (month is 0-based → 7 = August)
+        cdReleaseDate: new Date(2026, 7, 14, 0, 0, 0),
+        pluginReleaseDate: new Date(2026, 7, 25, 0, 0, 0)
     };
     // Are we still in the pre-release / prototype phase?
     const IS_PROTOTYPE = !RELEASE.RELEASED;
@@ -1841,6 +1842,79 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 1000);
     }
+
+    /* ==========================================================================
+       5.7. PLUGIN PRE-ORDER & RELEASE SYSTEM (own release date)
+       ========================================================================== */
+    (function initPluginRelease() {
+        const btn = document.getElementById('plugin-order-btn');
+        if (!btn) return;
+
+        const target = RELEASE.pluginReleaseDate.getTime();
+        const releaseLabel = RELEASE.pluginReleaseDate.toLocaleDateString('de-DE', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        const statusBadge = document.getElementById('plugin-status-badge');
+        const releaseBadge = document.getElementById('plugin-release-badge');
+        const countdown = document.getElementById('plugin-countdown');
+        const notice = document.getElementById('plugin-preorder-notice');
+        const dEl = document.getElementById('plugin-cd-days');
+        const hEl = document.getElementById('plugin-cd-hours');
+        const mEl = document.getElementById('plugin-cd-minutes');
+        const sEl = document.getElementById('plugin-cd-seconds');
+
+        function render() {
+            const timeLeft = target - Date.now();
+
+            if (timeLeft > 0) {
+                // Pre-release: pre-order mode
+                if (statusBadge) statusBadge.textContent = 'Vorbestellung möglich';
+                if (releaseBadge) {
+                    releaseBadge.textContent = 'Release am ' + releaseLabel;
+                    releaseBadge.style.display = 'inline-block';
+                }
+                if (countdown) countdown.style.display = 'block';
+                if (notice) notice.style.display = 'flex';
+
+                if (!btn.innerHTML.includes('vorbestellen')) {
+                    btn.innerHTML = '<i data-lucide="shopping-cart"></i> Jetzt vorbestellen';
+                    btn.setAttribute('data-name', '_X_D-EQ_z_ (Plugin, Vorbestellung)');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                if (dEl) dEl.textContent = String(days).padStart(2, '0');
+                if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+                if (mEl) mEl.textContent = String(minutes).padStart(2, '0');
+                if (sEl) sEl.textContent = String(seconds).padStart(2, '0');
+            } else {
+                // Released: instant download
+                if (statusBadge) statusBadge.textContent = 'Sofort-Download';
+                if (releaseBadge) releaseBadge.style.display = 'none';
+                if (countdown) countdown.style.display = 'none';
+                if (notice) {
+                    const noticeText = notice.querySelector('span');
+                    if (noticeText) noticeText.textContent = 'Sofort-Download nach Zahlungseingang – kein Versand.';
+                }
+
+                if (!btn.innerHTML.includes('kaufen')) {
+                    btn.innerHTML = '<i data-lucide="download"></i> Jetzt kaufen';
+                    btn.setAttribute('data-name', '_X_D-EQ_z_ (Plugin, Download)');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        }
+
+        render();
+        const iv = setInterval(() => {
+            render();
+            if (target - Date.now() <= 0) clearInterval(iv);
+        }, 1000);
+    })();
 
     /* ==========================================================================
        6. PORTFOLIO & PRODUCT GALLERY LIGHTBOX SYSTEM
